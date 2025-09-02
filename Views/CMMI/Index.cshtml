@@ -1,0 +1,124 @@
+﻿@model LegislacionAPP.Models.CMMIIndexVM
+
+@{
+    ViewData["Title"] = "CMMI — " + Model.Empresa;
+
+    string Badge(int id) => id switch
+    {
+        (int)LegislacionAPP.Common.Enums.EstadoCodigo.Borrador => "badge bg-secondary",
+        (int)LegislacionAPP.Common.Enums.EstadoCodigo.EnRevision => "badge bg-info",
+        (int)LegislacionAPP.Common.Enums.EstadoCodigo.Cumple => "badge bg-success",
+        (int)LegislacionAPP.Common.Enums.EstadoCodigo.NoCumple => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
+}
+
+<div class="page-head rounded-3 shadow-sm p-3 mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="h4 mb-1">CMMI · @Model.Empresa</h1>
+        <div class="text-muted">Historial de evaluaciones de madurez</div>
+    </div>
+    @if (User.IsInRole("Auditor"))
+    {
+        <form asp-action="Nueva" asp-route-empresaId="@Model.id_empresa" method="post" class="m-0">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Nueva evaluación
+            </button>
+        </form>
+    }
+</div>
+
+@if (!Model.Evaluaciones.Any())
+{
+    <div class="alert alert-info">
+        Aún no hay evaluaciones registradas. Use <strong>Nueva evaluación</strong> para iniciar.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 16rem;">Inicio</th>
+                    <th style="width: 16rem;">Cierre</th>
+                    <th>Auditor</th>
+                    <th>Estado</th>
+                    <th style="width: 240px;">Avance</th>
+                    <th style="width: 80px;" class="text-center">Nivel</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Evaluaciones)
+                {
+                    <tr class="@(r.fecha_cierre == null ? "table-warning" : "")">
+                        <td>@r.fecha_inicio.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(r.fecha_cierre?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                        <td>@r.Auditor</td>
+                        <td><span class="@Badge(r.id_estado)">@r.Estado</span></td>
+                        <td>
+                            <div class="small text-muted mb-1">@r.Porcentaje.ToString("0.##")%</div>
+                            <div class="progress progress-thin" role="progressbar"
+                                 aria-valuenow="@r.Porcentaje" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar" style="width:@r.Porcentaje%"></div>
+                            </div>
+                        </td>
+                        <td class="text-center fw-semibold">@r.Nivel</td>
+                        <td class="text-end">
+                            @if (r.fecha_cierre == null)
+                            {
+                                <a class="btn btn-sm btn-primary"
+                                   asp-action="Evaluar"
+                                   asp-route-empresaId="@Model.id_empresa"
+                                   asp-route-evalId="@r.id_evaluacion"
+                                   target="_blank" rel="noopener">
+                                    Continuar
+                                </a>
+                                @* Ejemplo Cerrar (cuando lo implementes)
+                            <form asp-action="Cerrar" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="evalId" value="@r.id_evaluacion" />
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('¿Cerrar evaluación?');">
+                                    Cerrar
+                                </button>
+                            </form>
+                            *@
+                            }
+                            else
+                            {
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   asp-controller="Reportes" asp-action="CMMI"
+                                   asp-route-empresaId="@Model.id_empresa"
+                                   asp-route-evalId="@r.id_evaluacion"
+                                   target="_blank" rel="noopener">
+                                    Ver reporte
+                                </a>
+
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   asp-controller="Reportes" asp-action="CMMIPdf"
+                                   asp-route-empresaId="@Model.id_empresa"
+                                   asp-route-evalId="@r.id_evaluacion"
+                                   target="_blank" rel="noopener">
+                                    PDF
+                                </a>
+
+                            }
+                            <a class="btn btn-primary btn-sm"
+                               asp-action="Certificado"
+                               asp-route-empresaId="@Model.id_empresa">
+                                Ver certificado
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="mt-3">
+    <a class="btn btn-link" asp-controller="Empresa" asp-action="Index">Volver a empresas</a>
+</div>

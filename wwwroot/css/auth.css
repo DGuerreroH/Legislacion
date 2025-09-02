@@ -1,0 +1,100 @@
+﻿body {
+}
+/* Fondo general */
+.auth-body {
+    background: #f5f7fb;
+    min-height: 100vh;
+}
+
+/* Centrado absoluto */
+.auth-wrapper {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+}
+
+/* Card */
+.auth-card {
+    width: 100%;
+    max-width: 540px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 40px 40px 28px;
+    box-shadow: 0 10px 30px rgba(16,24,40,.08);
+}
+
+/* Marca (logo + nombre) */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: 22px;
+}
+
+    .brand img {
+        height: 60px;
+    }
+
+    .brand span {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #111827;
+    }
+
+/* Título */
+.auth-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 6px 0 24px;
+    color: #111827;
+}
+
+/* Inputs grandes con íconos */
+.input-group-text {
+    background: #f3f4f6;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control, .input-group-text {
+    border-radius: 12px;
+}
+
+/* Botón azul prominente */
+.btn-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    box-shadow: 0 6px 14px rgba(59,130,246,.30);
+}
+
+    .btn-primary:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+
+/* Footer pequeño */
+.auth-footer {
+    margin-top: 24px;
+    color: #6b7280;
+    text-align: center;
+}
+
+/* Validación unobtrusive a juego */
+.input-validation-error,
+.auth-form .form-control.input-validation-error {
+    border-color: #ef4444 !important;
+}
+
+.field-validation-error {
+    color: #ef4444 !important;
+    font-size: .875rem;
+    margin-top: .25rem;
+}
+
+.validation-summary-errors {
+    color: #ef4444;
+}

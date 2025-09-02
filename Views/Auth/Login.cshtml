@@ -1,0 +1,41 @@
+﻿@model LegislacionAPP.Models.LoginVM
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Ingresar";
+}
+
+<div class="auth-card">
+    <div class="brand">
+        <img src="~/assets/logo.png" alt="Legislación" onerror="this.style.display='none'" />
+        <span>MARCO LEGAL Y REGULATORIO</span>
+    </div>
+
+    <h1 class="auth-title">Bienvenido</h1>
+
+    <form asp-action="Login" method="post" class="auth-form" novalidate>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">Correo</label>
+            <div class="input-group input-group-lg">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input asp-for="Email" class="form-control" placeholder="nombre@dominio.com" />
+            </div>
+            <span asp-validation-for="Email" class="field-validation-error"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label">Contraseña</label>
+            <div class="input-group input-group-lg">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" />
+            </div>
+            <span asp-validation-for="Password" class="field-validation-error"></span>
+        </div>            
+
+        <button class="btn btn-primary btn-lg w-100">Ingresar</button>
+    </form>
+
+    <div class="auth-footer small">© @DateTime.Now.Year — Legislación APP</div>
+</div>

@@ -1,0 +1,135 @@
+﻿@model IEnumerable<LegislacionAPP.ViewModels.LegislacionRowVM>
+@using System
+
+@{
+    ViewData["Title"] = "Legislaciones";
+    var empresa = (string?)ViewBag.Empresa ?? "Empresa";
+    var empresaId = (int)ViewBag.EmpresaId;
+    bool puedeCrear = User.IsInRole("Digitalizador") || User.IsInRole("Admin");
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h2 class="page-title mb-0">Legislaciones</h2>
+        <div class="text-secondary small">Empresa: <strong>@empresa</strong></div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a asp-controller="Empresas" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Mis empresas
+        </a>
+        @if (puedeCrear)
+        {
+            <a asp-action="Create" asp-route-empresaId="@empresaId" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Nueva legislación
+            </a>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-modern align-middle mb-0">
+                <thead class="table-light sticky-th">
+                    <tr>
+                        <th style="width:33%">Título</th>
+                        <th>Código</th>
+                        <th>Vigencia</th>
+                        <th>Creación</th>
+                        <th class="text-center">Segmentos</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        // Intenta formatear la vigencia y marcar si ya venció
+                        DateTime? fv = null;
+                        try { fv = Convert.ToDateTime(item.fecha_vigencia); } catch { }
+                        bool vencida = fv.HasValue && fv.Value.Date < DateTime.Today;
+
+                        var vigBadgeClass = vencida ? "badge-soft-danger" : "badge-soft-success";
+                        var vigText = (item.fecha_vigencia?.ToString() ?? "—");
+
+                        DateTime? fc = null;
+                        try { fc = Convert.ToDateTime(item.fecha_creacion); } catch { }
+                        var fcText = fc?.ToString("dd/MM/yyyy HH:mm") ?? (item.fecha_creacion.ToString() ?? "—");
+
+                        <tr>
+                            <td>
+                                <div class="fw-semibold text-truncate">@item.titulo</div>
+                                @* si quieres mostrar subtítulo/alias, descomenta
+                            <div class="text-secondary small text-truncate">@item.subtitulo</div>
+                            *@
+                            </td>
+
+                            <td>
+                                <span class="badge badge-soft-primary">@item.codigo_interno</span>
+                            </td>
+
+                            <td>
+                                <span class="badge @vigBadgeClass">@vigText</span>
+                            </td>
+
+                            <td>
+                                <span class="text-secondary">@fcText</span>
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge rounded-pill bg-secondary-subtle text-secondary fw-semibold">
+                                    @item.total_segmentos
+                                </span>
+                            </td>
+
+                            <td class="text-end">
+                                <div class="btn-toolbar justify-content-end gap-1">
+                                    @* AUDITOR *@
+                                    @if (User.IsInRole("Auditor"))
+                                    {
+                                        <a class="btn btn-sm btn-primary"
+                                           asp-controller="Auditoria"
+                                           asp-action="Index"
+                                           asp-route-id="@item.id_legislacion"
+                                           title="Auditar">
+                                            <i class="bi bi-clipboard-check me-1"></i>
+                                            <span class="d-none d-md-inline">Auditar</span>
+                                        </a>
+                                    }                           
+
+                                    @* DIGITALIZADOR / ADMIN: mantenimiento *@
+                                    @if (User.IsInRole("Digitalizador"))
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary"
+                                           asp-action="Edit"
+                                           asp-route-id="@item.id_legislacion"
+                                           title="Editar"><i class="bi bi-pencil"></i></a>
+
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                           asp-action="Details"
+                                           asp-route-id="@item.id_legislacion"
+                                           title="Detalles"><i class="bi bi-eye"></i></a>
+
+                                        <a class="btn btn-sm btn-outline-danger"
+                                           asp-action="Delete"
+                                           asp-route-id="@item.id_legislacion"
+                                           title="Eliminar"><i class="bi bi-trash"></i></a>
+                                    }                                    
+                                    @* @if (User.IsInRole("Digitalizador") || User.IsInRole("Auditor") || User.IsInRole("Administrador"))
+                                      *@
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                           asp-controller="Legislacion"
+                                           asp-action="Ciclos"
+                                           asp-route-legislacionId="@item.id_legislacion"
+                                           title="Reportes">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </a>                                    
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,47 @@
+﻿@model List<LegislacionAPP.Models.DBModels.Evidencia>
+
+@{
+    string Chip(string? mime)
+    {
+        var m = (mime ?? "").ToLowerInvariant();
+        if (m.Contains("pdf")) return "PDF";
+        if (m.StartsWith("image/")) return "IMG";
+        if (m.Contains("excel") || m.Contains("spreadsheet")) return "XLS";
+        if (m.Contains("word")) return "DOC";
+        return "FILE";
+    }
+    string DotClass(string? mime)
+    {
+        var m = (mime ?? "").ToLowerInvariant();
+        if (m.Contains("pdf")) return "file-dot file-pdf";
+        if (m.StartsWith("image/")) return "file-dot file-img";
+        return "file-dot";
+    }
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="text-muted small">Sin evidencias.</div>
+}
+else
+{
+    <ul class="list-group list-group-flush evid-list">
+        @foreach (var e in Model)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center gap-3"
+                data-evidencia-id="@e.id_evidencia">
+
+                <div class="d-flex align-items-center gap-2">
+                    <span class="@DotClass(e.mime_type)"></span>
+                    <a href="@e.contenido_url" target="_blank" class="fw-semibold text-decoration-none">
+                        @e.nombre_archivo
+                    </a>
+                </div>
+
+                <button type="button" class="btn btn-outline-danger btn-sm" data-del-evidencia>
+                    Eliminar
+                </button>
+            </li>
+        }
+    </ul>
+}

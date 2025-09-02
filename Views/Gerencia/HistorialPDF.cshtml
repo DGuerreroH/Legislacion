@@ -1,0 +1,67 @@
+﻿@model HistorialLegislacionVM
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        body {
+            font-family: Arial;
+            font-size: 12px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Historial de Evaluaciones</h1>
+    <div><b>Empresa:</b> @Model.Empresa</div>
+    <div><b>Legislación:</b> @Model.Legislacion</div>
+    @if (!string.IsNullOrWhiteSpace(Model.Ambito))
+    {
+        <div><b>Ámbito:</b> @Model.Ambito</div>
+    }
+    <table>
+        <thead>
+            <tr>
+                <th>Ciclo</th>
+                <th>Inicio</th>
+                <th>Cierre</th>
+                <th>#Seg.</th>
+                <th>#Aprob.</th>
+                <th>%</th>
+                @* <th>Aprobador</th>
+                <th>Resumen</th> *@
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model.Ciclos)
+            {
+                <tr>
+                    <td>@c.id_ciclo_auditoria</td>
+                    <td>@c.fecha_inicio:dd/MM/yyyy</td>
+                    <td>@(c.fecha_cierre?.ToString("dd/MM/yyyy") ?? "-")</td>
+                    <td>@c.articulos_totales</td>
+                    <td>@c.articulos_aprobados</td>
+                    <td>@c.porcentaje_avance</td>
+                    @* <td>@c.aprobador</td> *@
+                    @* <td>@c.resumen</td> *@
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>

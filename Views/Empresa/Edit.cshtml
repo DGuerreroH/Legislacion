@@ -1,0 +1,98 @@
+﻿@model LegislacionAPP.Models.EmpresaFormVM
+@{
+    ViewData["Title"] = "Editar empresa";
+    var logoUrl = string.IsNullOrWhiteSpace(Model.logo)
+        ? Url.Content("~/img/placeholder-logo.svg")
+        : Model.logo;
+}
+
+<div class="container my-3">
+    <h3 class="mb-3">Empresa</h3>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" class="row g-4">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="id_empresa" />
+        <!-- Estado va disabled en el select, por eso lo mandamos hidden para que se postee -->
+        <input type="hidden" asp-for="id_estado" />
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><strong>Logo</strong></div>
+                <div class="card-body text-center">
+                    <img id="logoPreview" src="@logoUrl"
+                         class="rounded-3 shadow-sm mb-3"
+                         style="width:160px;height:160px;object-fit:cover" alt="Logo" />
+                    <div class="text-muted small mb-2">PNG/JPG • máx. 2 MB</div>
+                    <input type="file" id="LogoFile" name="LogoFile" accept="image/*" class="form-control" />
+                    <input type="hidden" asp-for="logo" />
+                    <span asp-validation-for="logo" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="nombre" class="form-label"></label>
+                            <input asp-for="nombre" class="form-control" />
+                            <span asp-validation-for="nombre" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="representante" class="form-label"></label>
+                            <input asp-for="representante" class="form-control" />
+                            <span asp-validation-for="representante" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="nit" class="form-label"></label>
+                            <input asp-for="nit" class="form-control" />
+                            <span asp-validation-for="nit" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">País</label>
+                            <select asp-for="id_pais" class="form-select" asp-items="Model.Paises"></select>
+                            <span asp-validation-for="id_pais" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Sector</label>
+                            <select asp-for="id_sector" class="form-select" asp-items="Model.Sectores"></select>
+                            <span asp-validation-for="id_sector" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Estado</label>
+                            <select asp-for="id_estado" class="form-select" asp-items="Model.Estados" disabled></select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="fecha_creacion" class="form-label"></label>
+                            <input asp-for="fecha_creacion" class="form-control" readonly />
+                            <span asp-validation-for="fecha_creacion" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Guardar cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('LogoFile')?.addEventListener('change', function (e) {
+            const [file] = e.target.files || [];
+            if (!file) return;
+            document.getElementById('logoPreview').src = URL.createObjectURL(file);
+        });
+    </script>
+}

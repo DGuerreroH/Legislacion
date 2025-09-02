@@ -1,0 +1,42 @@
+﻿@model CertificadoVM
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        body {
+            font-family: Georgia, serif;
+            text-align: center;
+        }
+
+        .box {
+            border: 4px double #333;
+            padding: 32px;
+            margin: 24px;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 28px;
+        }
+
+        .muted {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Certificado de Cumplimiento</h1>
+        <p>
+            Se certifica que la empresa <b>@Model.Empresa</b> que reside en el país: @Model.Pais
+            cumple al <b>100%</b> con la legislación:
+        </p>
+        <p><b>@Model.Legislacion</b></p>
+        <p class="muted">
+            Fecha de cierre: @(Model.FechaCierre.ToString("dd/MM/yyyy HH:mm"))<br />
+            Folio: @Model.Folio
+        </p>
+    </div>
+</body>
+</html>

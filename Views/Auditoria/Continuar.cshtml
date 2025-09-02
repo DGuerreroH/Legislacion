@@ -1,0 +1,312 @@
+﻿@model LegislacionAPP.Models.AuditoriaContinuarVM
+@{
+    ViewData["Title"] = "Continuar auditoría";
+    var disabled = Model.CicloAbierto ? "" : "disabled";
+}
+
+<!-- CABECERA -->
+<div class="page-head rounded-3 shadow-sm p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h4 mb-1">Auditoría</h1>
+            <p class="text-muted mb-0">@Model.EmpresaNombre · @Model.Titulo</p>
+        </div>
+        <a class="btn btn-outline-secondary d-none d-md-inline-flex"
+           asp-action="Index" asp-route-id="@Model.id_legislacion">Volver</a>
+    </div>
+</div>
+
+<!-- RESUMEN / KPIs -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="text-muted small">Inicio</div>
+            <div class="fw-semibold">@Model.fecha_inicio.ToString("dd/MM/yyyy HH:mm")</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="text-muted small">Cierre</div>
+            <div class="fw-semibold">@(Model.fecha_cierre?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="text-muted small">Auditor</div>
+            <div class="fw-semibold">@(Model.AuditorNombre ?? "—")</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="text-muted small">Estado</div>
+            <span class="badge @(Model.CicloAbierto ? "bg-primary" : "bg-success")">
+                @(Model.CicloAbierto ? "Abierta" : "Cerrada")
+            </span>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Avance</span>
+                <span>@Model.articulos_aprobados/@Model.articulos_totales (@Model.porcentaje_avance %)</span>
+            </div>
+            <div class="progress progress-thin" role="progressbar"
+                 aria-valuenow="@Model.porcentaje_avance" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-success" style="width:@Model.porcentaje_avance%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Guardar" asp-controller="Auditoria" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="id_legislacion" />
+    <input type="hidden" asp-for="id_ciclo_auditoria" />
+    <input type="hidden" asp-for="accion" />
+    <input type="hidden" asp-for="randomSave" />    
+
+    <div class="row g-3">
+        @for (int i = 0; i < Model.Segmentos.Count; i++)
+        {
+            const int ID_CUMPLE = 6;
+            const int ID_PARCIAL = 10;
+            const int ID_NOCUMPLE = 7;
+            int sel = Model.Segmentos[i].id_estado ?? 0;
+            var dis = Model.CicloAbierto ? "" : "disabled";
+
+            string badgeClass;
+            string semClass;
+            string segClass;
+            string estText;
+            switch (sel)
+            {
+                case ID_CUMPLE:
+                    semClass = "sem sem-ok";
+                    segClass = "seg-ok";
+                    badgeClass = "bg-success";
+                    estText = "Cumple";
+                    break;
+
+                case ID_PARCIAL:
+                    semClass = "sem sem-mid";
+                    segClass = "seg-mid";
+                    badgeClass = "bg-warning";
+                    estText = "Parcial";
+                    break;
+
+                case ID_NOCUMPLE:
+                    semClass = "sem sem-bad";
+                    segClass = "seg-bad";
+                    badgeClass = "bg-danger";
+                    estText = "No cumple";
+                    break;
+
+                default:
+                    semClass = "sem sem-pend";
+                    segClass = "seg-pend";
+                    badgeClass = "bg-secondary";
+                    estText = "Pendiente";
+                    break;
+            }
+
+            <div class="col-12">
+                <div class="segment-card @segClass">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="@semClass" title="@estText"></span>
+                            <span class="badge bg-secondary">@Model.Segmentos[i].tipo_elemento</span>
+                            <span class="text-muted small">Segmento #@(i + 1)</span>
+                        </div>
+                        <span class="badge badge-estado @badgeClass">@estText</span>
+                    </div>
+
+                    <input type="hidden" name="Segmentos[@i].id_segmento_legislacion"
+                           value="@Model.Segmentos[i].id_segmento_legislacion" />
+                    <input type="hidden" name="Segmentos[@i].id_evaluacion_segmento"
+                           value="@Model.Segmentos[i].id_evaluacion_segmento" />
+
+                    <label class="form-label">@Model.Segmentos[i].segmentoTitulo</label>
+                    <div class="rich-view border rounded p-3 bg-white">
+                        @Html.Raw(Model.Segmentos[i].contenido)
+                    </div>
+
+                    <!-- HIDDEN REAL que viaja al servidor -->
+                    <input type="hidden"
+                           name="Segmentos[@i].id_estado"
+                           value="@sel"
+                           data-id-estado="@i" />
+
+                    <div class="mt-2">
+                        <label class="form-label me-3">Resultado</label>
+
+                        <!-- Radios con nombre distinto y data-index para sincronizar -->
+                        <div class="btn-group"
+                             role="group"
+                             aria-label="Resultado"
+                             data-group-index="@i">
+
+                            <input class="btn-check" type="radio"
+                                   name="est_@i" id="ok_@i"
+                                   value="@ID_CUMPLE" @(sel == ID_CUMPLE ? "checked" : "") @dis />
+                            <label class="btn btn-outline-success" for="ok_@i">Cumple</label>
+
+                            <input class="btn-check" type="radio"
+                                   name="est_@i" id="parcial_@i"
+                                   value="@ID_PARCIAL" @(sel == ID_PARCIAL ? "checked" : "") @dis />
+                            <label class="btn btn-outline-warning" for="parcial_@i">Parcial</label>
+
+                            <input class="btn-check" type="radio"
+                                   name="est_@i" id="no_@i"
+                                   value="@ID_NOCUMPLE" @(sel == ID_NOCUMPLE ? "checked" : "") @dis />
+                            <label class="btn btn-outline-danger" for="no_@i">No cumple</label>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" rows="2" name="Segmentos[@i].observaciones" @dis>@Model.Segmentos[i].observaciones</textarea>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="d-flex align-items-end gap-2 flex-wrap">
+                            <div class="flex-grow-1">
+                                <label class="form-label">Adjuntar evidencia (imagen o PDF)</label>
+                                <input type="file" class="form-control"
+                                       accept="image/*,application/pdf"
+                                       data-evi-input
+                                       data-ciclo-id="@Model.id_ciclo_auditoria"
+                                       data-seg-id="@Model.Segmentos[i].id_evaluacion_segmento" @dis />
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary" data-evi-upload @dis>
+                                    Subir
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-semibold">Evidencias</div>
+                            </div>
+
+                            <div data-evi-list
+                                 data-ciclo-id="@Model.id_ciclo_auditoria"
+                                 data-seg-id="@Model.Segmentos[i].id_evaluacion_segmento">
+                                @await Html.PartialAsync("_EvidenciasList", @Model.Segmentos[i].Evidencias)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- BARRA DE ACCIONES -->
+    <div class="sticky-actions mt-3 d-flex flex-wrap gap-2">
+        @if (Model.CicloAbierto)
+        {          
+            <button class="btn btn-primary"
+                    type="submit"
+                    onclick="document.getElementById('accion').value='guardar';
+                         document.getElementById('randomSave').value='false';">
+                Guardar
+            </button>
+
+            <!-- Guardado rápido => vm, "guardar", true -->
+            <button class="btn btn-secondary"
+                    type="submit"
+                    onclick="document.getElementById('accion').value='guardar';
+                         document.getElementById('randomSave').value='true';">
+                Guardado rápido
+            </button>
+
+            <!-- Cerrar auditoría => vm, "cerrar", true -->
+            <button class="btn btn-outline-danger"
+                    type="submit"
+                    onclick="document.getElementById('accion').value='cerrar';
+                         document.getElementById('randomSave').value='false';
+                         return confirm('¿Cerrar auditoría?');">
+                Cerrar auditoría
+            </button>
+        }
+        else
+        {
+            <div class="alert alert-info m-0">Ciclo cerrado: los resultados son de solo lectura.</div>
+        }
+
+        <a class="btn btn-link"
+           asp-action="Index" asp-route-id="@Model.id_legislacion">
+            Volver a auditorías
+        </a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+          // --- Evidencias (sin cambios) ---
+          async function uploadEvidencia(btn) {
+            const wrap = btn.closest('.segment-card') ?? document;
+            const input = wrap.querySelector('[data-evi-input]');
+            const listWrap = wrap.querySelector('[data-evi-list]');
+            if (!input || !listWrap || !input.files?.length) return;
+
+            const fd = new FormData();
+            fd.append('cicloId', input.dataset.cicloId);
+            fd.append('segId',   input.dataset.segId);
+            fd.append('archivo', input.files[0]);
+
+            const resp = await fetch('@Url.Action("SubirEvidencia", "Auditoria")', {
+              method: 'POST',
+              body: fd,
+              headers: { 'RequestVerificationToken': getAntiForgery() }
+            });
+            if (!resp.ok) { alert('Error al subir evidencia'); return; }
+
+            listWrap.innerHTML = await resp.text();
+            input.value = '';
+          }
+
+          async function deleteEvidencia(btn) {
+            const row = btn.closest('[data-evidencia-id]');
+            if (!row) return;
+            const id = row.getAttribute('data-evidencia-id');
+            if (!confirm('¿Eliminar la evidencia?')) return;
+
+            const resp = await fetch('@Url.Action("EliminarEvidencia", "Auditoria")', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'RequestVerificationToken': getAntiForgery()
+              },
+              body: new URLSearchParams({ id })
+            });
+            if (resp.ok) row.remove();
+            else alert('No se pudo eliminar.');
+          }
+
+          document.addEventListener('click', function (e) {
+            const t = e.target;
+            if (t.matches('[data-evi-upload]')) uploadEvidencia(t);
+            else if (t.matches('[data-del-evidencia]')) deleteEvidencia(t);
+          });
+
+          function getAntiForgery() {
+            const el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
+          }
+
+          // --- Sincroniza radios -> hidden Segmentos[i].id_estado ---
+          document.addEventListener('change', function (e) {
+            const t = e.target;
+            if (!t.matches('.btn-check')) return;        // sólo radios del grupo
+            const group = t.closest('[role="group"][aria-label="Resultado"]');
+            if (!group) return;
+            const idx = group.dataset.groupIndex;
+            const hidden = document.querySelector(`input[name="Segmentos[${idx}].id_estado"]`);
+            if (hidden) hidden.value = t.value;
+          });
+        })();
+    </script>
+}

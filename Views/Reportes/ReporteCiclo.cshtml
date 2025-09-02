@@ -1,0 +1,148 @@
+﻿@model ReporteAuditoriaVM
+@using LegislacionAPP.Common.Enums
+
+@functions {
+    // Clases de fondo compatibles con Bootstrap <= 5.1
+    string ClaseEstado(EstadoCodigo e) => e switch
+    {
+        EstadoCodigo.Cumple => "bg-success text-white",
+        EstadoCodigo.NoCumple => "bg-danger text-white",
+        EstadoCodigo.Parcial => "bg-warning text-dark",
+        EstadoCodigo.Observado => "bg-warning text-dark",
+        EstadoCodigo.EnRevision => "bg-secondary text-white",
+        _ => "bg-secondary text-white"
+    };
+
+    string TextoEstado(EstadoCodigo e) => e switch
+    {
+        EstadoCodigo.Cumple => "Cumple",
+        EstadoCodigo.NoCumple => "No cumple",
+        EstadoCodigo.Parcial => "Cumple parcialmente",
+        EstadoCodigo.Observado => "Observado",
+        EstadoCodigo.EnRevision => "Pendiente",
+        _ => "Pendiente"
+    };
+
+    string BadgeStyle(EstadoCodigo e) => e switch
+    {
+        EstadoCodigo.Cumple => "background:#28a745;color:#fff",
+        EstadoCodigo.NoCumple => "background:#dc3545;color:#fff",
+        EstadoCodigo.Parcial => "background:#ffc107;color:#212529",
+        EstadoCodigo.Observado => "background:#ffc107;color:#212529",
+        _ => "background:#6c757d;color:#fff"
+    };
+}
+
+@{
+    // Porcentaje seguro (0-100) y ancho en px (wkhtmltopdf es más estable con px)
+    var porc = Math.Max(0, Math.Min(100, (int)Math.Round(Convert.ToDecimal(Model.AvancePorc))));
+    var totalPx = 360;                               // ancho total de la barra
+    var fillPx = (int)(totalPx * porc / 100m);      // ancho del relleno
+}
+
+<div class="container my-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="mb-0">Reporte de Auditoría — @Model.Legislacion</h4>
+        <div class="d-print-none">
+            <a asp-action="ReporteCicloPdf" asp-route-cicloId="@Model.id_ciclo_auditoria"
+               class="btn btn-outline-secondary btn-sm">PDF</a>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <div class="border rounded p-2">
+                <div class="text-muted small">Empresa</div>
+                <div class="fw-semibold">@Model.Empresa</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="border rounded p-2">
+                <div class="text-muted small">Auditor</div>
+                <div class="fw-semibold">@Model.Auditor</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="border rounded p-2">
+                <div class="text-muted small">Inicio</div>
+                <div>@(Model.fecha_inicio.ToString("dd/MM/yyyy HH:mm"))</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="border rounded p-2">
+                <div class="text-muted small">Cierre</div>
+                <div>@(Model.fecha_cierre?.ToString("dd/MM/yyyy HH:mm") ?? "—")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-md-6">
+            <div class="border rounded p-3">
+                <div class="d-flex justify-content-between">
+                    <div class="text-muted small">Avance</div>
+                    <div class="fw-semibold">@porc %</div>
+                </div>
+
+                <!-- Barra de progreso 100% inline (compatible con wkhtmltopdf) -->
+                <div style="
+                     margin-top:6px;
+                     width:@(totalPx)px;
+                     height:10px;
+                     background:#e9ecef;
+                     border:1px solid #dee2e6;
+                     border-radius:4px;
+                     overflow:hidden;">
+                    <div style="
+                         height:10px;
+                         width:@(fillPx)px;
+                         background:#28a745;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="border rounded p-3">
+                <span class="badge text-bg-secondary me-2">Total: @Model.TotalSegmentos</span>
+                <span class="badge text-bg-success me-2">Aprobados: @Model.Aprobados</span>
+                <span class="badge text-bg-danger me-2">No aprobados: @Model.NoAprobados</span>
+                <span class="badge text-bg-secondary">Pendientes: @Model.Pendientes</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Tipo</th>
+                    <th>Contenido</th>
+                    <th>Resultado</th>
+                    <th>Comentario del auditor</th>
+                    <th class="text-end">Evidencias</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Items)
+                {
+                    <tr>
+                        <td class="text-muted">@r.Orden</td>
+                        <td>@r.TipoElemento</td>
+                        <td style="max-width:600px">@r.Contenido</td>
+                        <td>
+                            <span class="badge"
+                                  style="@BadgeStyle(r.Estado);padding:.35em .65em;border-radius:.375rem;font-weight:600;">
+                                @TextoEstado(r.Estado)
+                            </span>
+                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(r.ComentarioAuditor) ? "—" : r.ComentarioAuditor)</td>
+                        <td class="text-end">@r.Evidencias</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,264 @@
+﻿@model CMMIEvaluarVM
+@{
+    ViewData["Title"] = "CMMI · Evaluar";
+    var dis = Model.Cerrada ? "disabled" : "";
+}
+
+<style>
+    .metric-card {
+        border-radius: 1rem;
+        border: 1px solid #e9ecef;
+        background: #fff
+    }
+
+        .metric-card .big {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1
+        }
+
+        .metric-card .label {
+            color: #6c757d
+        }
+
+    .cat-card {
+        border-radius: 1rem;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+        background: #fff
+    }
+
+        .cat-card .card-header {
+            background: #fff;
+            border-bottom: 1px solid #eef2f6
+        }
+
+    .progress-thin {
+        height: .4rem;
+        border-radius: 1rem
+    }
+
+    .badge-soft {
+        background: #000000;
+        border: 1px solid #e9ecef
+    }
+
+    .segmented .btn {
+        --bs-btn-padding-y: .35rem;
+        --bs-btn-padding-x: .6rem;
+        --bs-btn-border-radius: .5rem
+    }
+
+    .segmented .btn-check:checked + .btn {
+        box-shadow: 0 0 0 .15rem rgba(13,110,253,.15) inset;
+        border-color: #0d6efd
+    }
+
+    /* colores por opción */
+    .opt-0 {
+        border-color: #dc3545 !important;
+        color: #dc3545
+    }
+
+    .opt-25 {
+        border-color: #fd7e14 !important;
+        color: #fd7e14
+    }
+
+    .opt-50 {
+        border-color: #6c757d !important;
+        color: #6c757d
+    }
+
+    .opt-75 {
+        border-color: #0d6efd !important;
+        color: #0d6efd
+    }
+
+    .opt-100 {
+        border-color: #198754 !important;
+        color: #198754
+    }
+
+    .comment-wrap {
+        background: #f8f9fb;
+        border-top: 1px dashed #e9ecef;
+        padding: .85rem 1rem
+    }
+
+    .sticky-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        background: #fff;
+        border-top: 1px solid #e9ecef;
+        padding: .75rem 0
+    }
+
+    @@media (max-width:768px) {
+        .choices-scroller
+
+    {
+        overflow-x: auto;
+        padding-bottom: .25rem
+    }
+
+    }
+</style>
+
+
+<div class="page-head rounded-3 shadow-sm p-3 mb-3 bg-white border">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h5 mb-1">CMMI — @Model.Empresa</h1>
+            <div class="text-muted small">
+                Inicio: @Model.fecha_inicio.ToString("dd/MM/yyyy HH:mm")
+                · Cierre: @(Model.fecha_cierre?.ToString("dd/MM/yyyy HH:mm") ?? "—")
+            </div>
+        </div>
+        <a asp-action="Index" asp-route-empresaId="@Model.id_empresa" class="btn btn-outline-secondary">Volver</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="metric-card p-3 text-center">
+            <div class="big">@Model.PorcentajeGlobal.ToString("0.##")%</div>
+            <div class="label small">Cumplimiento</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="metric-card p-3 text-center">
+            <div class="big">@Model.NivelGlobal</div>
+            <div class="label small">Nivel de madurez</div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Evaluar" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="id_empresa" />
+    <input type="hidden" asp-for="id_evaluacion" />
+
+    @for (int i = 0; i < Model.Categorias.Count; i++)
+    {
+        var cat = Model.Categorias[i];
+        var tot = cat.Preguntas.Count;
+        var ans = cat.Preguntas.Count(p => p.valor.HasValue);
+        var avg = tot == 0 ? 0 :
+        (int)Math.Round(cat.Preguntas.Where(p => p.valor.HasValue)
+        .DefaultIfEmpty()
+        .Average(p => p?.valor ?? 0m));
+
+        var collapseId = $"cat_{i}";
+        <div class="cat-card mb-4 shadow-sm">
+            <div class="card-header py-3 px-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <button class="btn btn-sm btn-link text-decoration-none p-0"
+                            type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId"
+                            aria-expanded="true" aria-controls="@collapseId">
+                        <strong class="me-2">@cat.nombre</strong>
+                        <span class="badge badge-soft">Preguntas: @tot</span>
+                    </button>
+
+                    <div class="text-end">
+                        <div class="small text-muted">@ans / @tot respondidas</div>
+                        <div class="progress progress-thin" style="width:180px" title="Promedio @avg%">
+                            <div class="progress-bar bg-success" style="width:@avg%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="@collapseId" class="collapse show">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:60%">Pregunta</th>
+                                    <th class="text-center" style="width:40%">Respuesta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int j = 0; j < cat.Preguntas.Count; j++)
+                                {
+                                    var p = cat.Preguntas[j];
+                                    var name = $"Categorias[{i}].Preguntas[{j}].valor";
+                                    int? val = p.valor;
+
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@p.codigo</div>
+                                            <div class="text-body">@p.texto</div>
+
+                                            <!-- Mantén metadatos ocultos si los necesitas en el POST -->
+                                            <input type="hidden" name="Categorias[@i].Preguntas[@j].id_pregunta" value="@p.id_pregunta" />
+                                            <input type="hidden" name="Categorias[@i].Preguntas[@j].codigo" value="@p.codigo" />
+                                            <input type="hidden" name="Categorias[@i].Preguntas[@j].texto" value="@p.texto" />
+                                            <!-- Vuelven estos dos: -->
+                                            <input type="hidden" name="Categorias[@i].Preguntas[@j].peso"
+                                                   value="@(p.peso.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                                            <input type="hidden" name="Categorias[@i].Preguntas[@j].es_critica"
+                                                   value="@p.es_critica" />
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="choices-scroller">
+                                                <div class="segmented d-inline-flex">
+                                                    @{
+                                                        void Opt(int v, string label, string cls)
+                                                        {
+                                                            <input class="btn-check" type="radio" name="@name" id="@($"{p.codigo}_{v}")"
+                                                                   value="@v" @(val == v ? "checked" : "") @dis />
+                                                            <label class="btn btn-outline-secondary btn-sm me-1 @cls"
+                                                                   for="@($"{p.codigo}_{v}")">@label</label>
+                ;
+                                                        }
+                                                        Opt(0, "0%", "opt-0");
+                                                        Opt(25, "25%", "opt-25");
+                                                        Opt(50, "50%", "opt-50");
+                                                        Opt(75, "75%", "opt-75");
+                                                        Opt(100, "100%", "opt-100");
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td colspan="2" class="comment-wrap">
+                                            <label class="form-label mb-1 small text-muted">Comentario</label>
+                                            <textarea class="form-control" rows="3"
+                                              name="Categorias[@i].Preguntas[@j].comentario" @dis>@(p.comentario ?? "")</textarea>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!Model.Cerrada)
+    {
+        <div class="sticky-actions">
+            <div class="d-flex gap-2">
+                <button type="submit" name="cerrar" value="false" class="btn btn-primary">
+                    Guardar
+                </button>
+
+                <button type="submit" name="cerrar" value="true"
+                        class="btn btn-danger"
+                        onclick="return confirm('¿Guardar y cerrar la evaluación?');">
+                    Guardar y cerrar
+                </button>
+
+                <a asp-action="Index" asp-route-empresaId="@Model.id_empresa" class="btn btn-outline-secondary ms-auto">
+                    Volver
+                </a>
+            </div>
+        </div>
+    }
+</form>

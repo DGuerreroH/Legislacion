@@ -1,0 +1,230 @@
+﻿@model LegislacionAPP.ViewModels.LegislacionEditVM
+
+<div class="page-head rounded-3 shadow-sm p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h4 mb-1">Legislación</h1>
+            <p class="text-muted mb-0">Edita la información general y sus segmentos.</p>
+        </div>
+        <div class="d-none d-lg-flex gap-2">
+            <a asp-action="Index" asp-route-empresaId="@Model.id_empresa"
+               class="btn btn-outline-secondary">Volver</a>
+            <button form="frmLegislacion" type="submit" class="btn btn-primary">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+<form id="frmLegislacion" asp-action="Edit" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input asp-for="id_legislacion" type="hidden" />
+
+    <div class="row g-4">
+        <!-- DATOS GENERALES -->
+        <div class="col-lg-6">
+            <div class="card card-elevated h-100">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <h5 class="card-title mb-0">Datos generales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="id_empresa" class="form-label">Empresa</label>
+                        <select asp-for="id_empresa" class="form-select" asp-items="Model.Empresas"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="id_estado" class="form-label">Estado</label>
+                        <select asp-for="id_estado" class="form-select" asp-items="Model.Estados"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="id_ambito_aplicacion" class="form-label">Ambito</label>
+                        <select asp-for="id_ambito_aplicacion" class="form-select" asp-items="Model.Ambitos"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="titulo" class="form-label">Titulo</label>
+                        <input asp-for="titulo" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="subtitulo" class="form-label">Subtitulo</label>
+                        <input asp-for="subtitulo" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="id_pais" class="control-label">Pais</label>
+                        <select asp-for="id_pais" class="form-control" asp-items="Model.Paises"></select>
+                        <span asp-validation-for="id_pais" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCUMENTO -->
+        <div class="col-lg-6">
+            <div class="card card-elevated h-100">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <h5 class="card-title mb-0">Documento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="alias" class="form-label">Alias</label>
+                        <input asp-for="alias" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="codigo_interno" class="form-label">Codigo interno</label>
+                        <input asp-for="codigo_interno" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="fecha_vigencia" class="form-label">Fecha vigencia</label>
+                        <input asp-for="fecha_vigencia" type="date" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Archivo PDF</label>
+                        <input asp-for="Pdf" type="file" accept="application/pdf" class="form-control" />
+                        <div class="help-muted mt-1">Sube un PDF para esta legislación.</div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.pdf_url))
+                    {
+                        <div>
+                            <div class="fw-semibold mb-2">Vista previa</div>
+                            <div class="pdf-embed overflow-hidden">
+                                <embed src="@Model.pdf_url#toolbar=1" type="application/pdf" width="100%" height="380" />
+                            </div>
+                            <div class="mt-2">
+                                <a class="btn btn-sm btn-outline-secondary" href="@Model.pdf_url" target="_blank">Abrir en pestaña</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEGMENTOS -->
+    <div class="card card-elevated mt-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h5 class="mb-0">Segmentos</h5>
+            <button type="button" id="btn-add-segment" class="btn btn-primary btn-sm">
+                + Agregar segmento
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="segmentos-container" class="row g-3">
+                @for (var i = 0; i < Model.Segmentos.Count; i++)
+                {
+                    var vd = new ViewDataDictionary(ViewData);
+                    vd["Prefix"] = $"Segmentos[{i}]";     // <- prefijo que usará el parcial
+                    vd["Index"] = i;                     // <- valor para Segmentos.Index (ver #2)
+                    vd["TiposElemento"] = Model.TiposElemento;
+                    vd["FotoId"] = Model.IdTipoElementoFoto;
+
+                    @await Html.PartialAsync("_SegmentCard", Model.Segmentos[i], vd)
+                }
+            </div>
+
+        </div>
+    </div>
+
+    <!-- acciones móviles + sticky -->
+    <div class="form-actions-sticky d-lg-none mt-3">
+        <div class="d-flex gap-2 justify-content-end">
+            <a asp-action="Index" asp-route-empresaId="@Model.id_empresa" class="btn btn-outline-secondary">Volver</a>
+            <button type="submit" class="btn btn-primary">Guardar</button>Corre
+            @for (var i = 0; i < Model.Segmentos.Count; i++)
+            {
+                var prefix = $"Segmentos[{i}]";
+                var vd = new ViewDataDictionary(ViewData)
+                {
+                    // Elimina la asignación directa a TemplateInfo, que es de solo lectura.
+                };
+                vd.TemplateInfo.HtmlFieldPrefix = prefix; // Asigna el prefijo al TemplateInfo existente.
+                vd["TiposElemento"] = Model.TiposElemento;
+                vd["FotoId"] = Model.IdTipoElementoFoto;
+
+                <partial name="_SegmentCard" model="Model.Segmentos[i]" view-data="vd" />
+            }
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+        // Visibilidad (Foto vs no Foto)
+        function setInitialVisibility(card) {
+          const select = card.querySelector('[data-segment-select]');
+          const wrap   = card.querySelector('[data-archivo-wrapper]');
+          if (!select || !wrap) return;
+          const fotoId = parseInt(wrap.dataset.fotoId, 10);
+          const val    = parseInt(select.value || '0', 10);
+          wrap.classList.toggle('d-none', val !== fotoId);
+        }
+
+        // Antes de enviar, vuelca el contenido del editor al <textarea>
+            document.getElementById('frmLegislacion')?.addEventListener('submit', function () {
+          if (window.tinymce && tinymce.triggerSave) tinymce.triggerSave();
+        });
+
+
+        // Delegado para mostrar/ocultar file de foto
+        document.getElementById('segmentos-container')
+          .addEventListener('change', function (e) {
+            if (!e.target.matches('[data-segment-select]')) return;
+            const card = e.target.closest('[data-segment-card]');
+            setInitialVisibility(card);
+          });
+
+        // Agregar tarjeta nueva
+        document.getElementById('btn-add-segment').addEventListener('click', async () => {
+          const container = document.getElementById('segmentos-container');
+          const index = container.querySelectorAll('[data-segment-card]').length;
+
+          const resp = await fetch('@Url.Action("AddSegmentCard", "Legislacion")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ index })
+          });
+
+          const html = await resp.text();
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = html;
+
+         const card = wrapper.firstElementChild;
+        container.appendChild(card);
+        setInitialVisibility(card);
+        initRichText(card);          // **IMPORTANTE** inicializa editores en la tarjeta nueva
+        });
+
+        // Inicializa estado en las tarjetas ya renderizadas
+        document.querySelectorAll('[data-segment-card]').forEach(setInitialVisibility);
+    </script>
+
+    <script>
+        function initRichText(scope) {
+          const root = scope || document;
+          root.querySelectorAll('textarea.rich:not(.rich-inited)').forEach(txt => {
+            txt.classList.add('rich-inited');
+            tinymce.init({
+              target: txt,
+              height: txt.rows >= 6 ? 260 : 180,
+              menubar: false,
+              branding: false,
+              convert_urls: false,
+              plugins: 'autoresize lists link table code',
+              toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code',
+              // idioma corregido para v6:
+              language: 'es',
+              language_url: 'https://cdn.jsdelivr.net/npm/tinymce-i18n@24.5.2/langs6/es.js',
+              setup: function (editor) {
+                // sincroniza el contenido al <textarea> para que MVC lo reciba
+                editor.on('change input keyup NodeChange', function () {
+                  editor.save();
+                });
+              }
+            });
+          });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+          initRichText(document); // editores iniciales
+        });
+    </script>
+}

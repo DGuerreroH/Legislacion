@@ -1,0 +1,223 @@
+﻿@model CMMICertificadoVM
+@{
+    Layout = "_Layout"; // o el que uses
+    var muted = Model.EsPdf ? "#6c757d" : "#6c757d";
+    var brand = "#0d6efd"; // azul
+}
+
+<style>
+    /* Estilos print-friendly */
+    .cert-wrap {
+        max-width: 980px;
+        margin: 1.5rem auto;
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 2rem;
+    }
+
+    .cert-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .cert-logo {
+        width: 96px;
+        height: 96px;
+        object-fit: contain;
+    }
+
+    .cert-title {
+        margin: 0;
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: #0d6efd;
+    }
+
+    .cert-meta {
+        color: @muted;
+        font-size: .9rem;
+    }
+
+    .cert-id {
+        font-weight: 700;
+        color: #495057;
+    }
+
+    .kpis {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+    }
+
+    .kpi {
+        flex: 1 1 220px;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+        .kpi .big {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .kpi .label {
+            color: @muted;
+        }
+
+    .justify {
+        text-align: justify;
+    }
+
+    .cat-grid {
+        display: grid;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: .75rem;
+    }
+
+    .cat-item {
+        border: 1px solid #e9ecef;
+        border-radius: .75rem;
+        padding: .75rem 1rem;
+        background: #fcfdff;
+    }
+
+    .cat-name {
+        font-weight: 600;
+    }
+
+    .cat-pct {
+        font-weight: 700;
+        color: @brand;
+    }
+
+    .signs {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .sign {
+        flex: 1 1 40%;
+        text-align: center;
+    }
+
+        .sign .line {
+            border-top: 1px solid #ced4da;
+            margin-top: 2.5rem;
+            padding-top: .25rem;
+            font-weight: 600;
+        }
+
+    /* impresión */
+    @@media print {
+        .no-print
+
+    {
+        display: none !important;
+    }
+
+    .cert-wrap {
+        box-shadow: none;
+        border-color: #ddd;
+    }
+
+    }
+</style>
+
+<div class="cert-wrap">
+    <div class="cert-head">
+        <div style="display:flex;gap:1rem;align-items:center;">
+            @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+            {
+                <img class="cert-logo" src="@Model.LogoUrl" alt="Logo" />
+            }
+            <div>
+                <h1 class="cert-title">Certificado de Evaluación CMMI</h1>
+                <div class="cert-meta">
+                    Emitido a: <strong>@Model.Empresa.nombre</strong>
+                    @if (!string.IsNullOrWhiteSpace(Model.EmpresaPais))
+                    {
+                        <span>(@Model.EmpresaPais)</span>
+                    }
+<br />
+                    Emisión: @Model.FechaEmision
+                    @if (Model.FechaVencimiento != null)
+                    {
+                        <text> · Válido hasta: @Model.FechaVencimiento</text>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="text-end">
+            <div class="cert-id">ID: @Model.CertId</div>
+            <a class="btn btn-outline-secondary btn-sm no-print" asp-action="Index" asp-route-empresaId="@Model.Empresa.id_empresa">Volver</a>
+        </div>
+    </div>
+
+    <div class="kpis">
+        <div class="kpi">
+            <div class="big">@Model.PorcentajeGlobal.ToString("0.##")%</div>
+            <div class="label">Cumplimiento global</div>
+        </div>
+        <div class="kpi">
+            <div class="big">@Model.NivelGlobal</div>
+            <div class="label">Nivel de madurez</div>
+        </div>
+        <div class="kpi">
+            <div class="big">@Model.Evaluacion.fecha_inicio</div>
+            <div class="label">Inicio evaluación</div>
+        </div>
+        <div class="kpi">
+            <div class="big">@Model.Evaluacion.fecha_cierre</div>
+            <div class="label">Cierre evaluación</div>
+        </div>
+    </div>
+
+    <p class="justify">
+        Este documento certifica que <strong>@Model.Empresa.nombre</strong> ha sido evaluada conforme al
+        modelo <strong>CMMI (Cybersecurity Maturity Model Indicators)</strong>, de acuerdo con el
+        cuestionario definido y la evidencia presentada. La evaluación fue realizada por
+        <strong>@(Model.Auditor?.nombre) @(Model.Auditor?.apellido)</strong> y alcanzó un
+        nivel global <strong>@Model.NivelGlobal</strong> con un cumplimiento de
+        <strong>@Model.PorcentajeGlobal.ToString("0.##")%</strong>.
+    </p>
+
+    <h2 class="h6 mt-4 mb-2">Resultados por categoría</h2>
+    <div class="cat-grid">
+        @foreach (var c in Model.Categorias.OrderBy(c => c.Codigo))
+        {
+            <div class="cat-item">
+                <div class="d-flex justify-content-between">
+                    <div class="cat-name">@c.Codigo — @c.Nombre</div>
+                    <div class="cat-pct">@c.Porcentaje.ToString("0.##")%</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="signs">
+        <div class="sign">
+            <div class="line">Auditor</div>
+            <div class="small">@Model.Auditor?.nombre @Model.Auditor?.apellido</div>
+        </div>
+        <div class="sign">
+            <div class="line">Representante de @Model.Empresa.nombre</div>
+            <div class="small">@Model.Empresa?.representante</div>
+        </div>
+    </div>
+
+    <div class="text-muted small mt-3">
+        Nota: Este certificado resume el resultado de la evaluación y no implica cumplimiento regulatorio per se.
+        La vigencia recomendada del certificado es de 12 meses desde la fecha de emisión o hasta cambios significativos
+        en el contexto tecnológico/organizacional.
+    </div>
+</div>

@@ -1,0 +1,98 @@
+param(
+  [string]$Root = ".",                 # carpeta raíz donde está la .sln
+  [string]$OldName = "Legislacion",    # nombre actual (proyecto/namespaces)
+  [string]$NewName = "LegisApp"        # nuevo nombre
+)
+
+# ==== 0) Preparación
+$ErrorActionPreference = "Stop"
+$rootPath = (Resolve-Path $Root).Path
+
+Write-Host "Root: $rootPath"
+Set-Location $rootPath
+
+# Cierra VS si estuviera abierto (opcional)
+$devenv = Get-Process devenv -ErrorAction SilentlyContinue
+if ($devenv) { Write-Host "Cerrando Visual Studio..." ; $devenv | Stop-Process -Force }
+
+# ==== 1) Detectar la solución y el proyecto
+$sln = Get-ChildItem -Path $rootPath -Filter "*.sln" | Select-Object -First 1
+if (-not $sln) { throw "No se encontró archivo .sln en $rootPath" }
+Write-Host "Solución: $($sln.Name)"
+
+# Buscar el .csproj del proyecto principal (que contenga OldName)
+$proj = Get-ChildItem -Recurse -Filter "*.csproj" |
+        Where-Object { $_.Name -eq "$OldName.csproj" -or $_.Directory.Name -eq $OldName } |
+        Select-Object -First 1
+if (-not $proj) { throw "No se encontró proyecto que coincida con '$OldName'." }
+
+$projDir = $proj.Directory.FullName
+$projFile = $proj.FullName
+Write-Host "Proyecto: $projFile"
+
+# ==== 2) Renombrar carpeta del proyecto y el .csproj
+$newProjDir = Join-Path $projDir ".." | Resolve-Path | ForEach-Object { Join-Path $_ $NewName }
+$newProjDir = [System.IO.Path]::GetFullPath($newProjDir)
+
+if ((Split-Path $projDir -Leaf) -ne $NewName) {
+  Write-Host "Renombrando carpeta '$projDir' -> '$newProjDir'"
+  Rename-Item -Path $projDir -NewName $NewName
+  $projDir = $newProjDir
+}
+
+$newCsproj = Join-Path $projDir "$NewName.csproj"
+if ((Split-Path $projFile -Leaf) -ne "$NewName.csproj") {
+  Write-Host "Renombrando csproj -> $newCsproj"
+  Rename-Item -Path (Join-Path $projDir "$OldName.csproj") -NewName "$NewName.csproj"
+}
+$projFile = $newCsproj
+
+# ==== 3) Actualizar AssemblyName y RootNamespace en el .csproj
+[xml]$xml = Get-Content $projFile
+$pg = $xml.Project.PropertyGroup | Select-Object -First 1
+if (-not $pg.AssemblyName) { $pg.AppendChild($xml.CreateElement("AssemblyName")) | Out-Null }
+if (-not $pg.RootNamespace) { $pg.AppendChild($xml.CreateElement("RootNamespace")) | Out-Null }
+$pg.AssemblyName = $NewName
+$pg.RootNamespace = $NewName
+$xml.Save($projFile)
+Write-Host "Actualizado AssemblyName y RootNamespace a '$NewName'"
+
+# ==== 4) Reemplazar namespaces en el código
+$files = Get-ChildItem -Recurse -File -Include *.cs,*.cshtml,*.razor,*.csproj,*.json |
+         Where-Object { $_.FullName -notmatch "\\bin\\|\\obj\\|\\.git\\" }
+
+$patterns = @(
+  @{ Old = "namespace\s+$OldName(\b|(?=\.))"; New = "namespace $NewName`$1" },
+  @{ Old = "using\s+$OldName(\b|(?=\.))";     New = "using $NewName`$1"     },
+  @{ Old = "(?<![A-Za-z0-9_])$OldName\.";    New = "$NewName."              }  # FQN
+)
+
+foreach ($f in $files) {
+  $txt = Get-Content $f.FullName -Raw
+  $orig = $txt
+  foreach ($p in $patterns) {
+    $txt = [System.Text.RegularExpressions.Regex]::Replace($txt, $p.Old, $p.New)
+  }
+  if ($txt -ne $orig) {
+    Set-Content -Path $f.FullName -Value $txt -Encoding UTF8
+    Write-Host "Actualizado: $($f.FullName)"
+  }
+}
+
+# ==== 5) Actualizar la solución (.sln)
+# Eliminamos el viejo path y agregamos el nuevo
+Write-Host "Actualizando la solución..."
+& dotnet sln $sln.FullName remove "$OldName\$OldName.csproj" 2>$null | Out-Null
+& dotnet sln $sln.FullName add $projFile | Out-Null
+
+# Renombrar archivo .sln si se llama OldName.sln
+if ($sln.BaseName -eq $OldName) {
+  $newSln = Join-Path $sln.Directory.FullName "$NewName.sln"
+  Write-Host "Renombrando solución '$($sln.FullName)' -> '$newSln'"
+  Rename-Item $sln.FullName $newSln
+}
+
+# ==== 6) Restaurar y compilar
+& dotnet restore
+& dotnet build
+

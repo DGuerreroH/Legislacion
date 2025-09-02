@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Acceso denegado";
+    Context.Response.StatusCode = 403; // opcional: marca código HTTP
+}
+
+<div class="container py-4">
+    <h1 class="display-6">Acceso denegado</h1>
+    <p class="text-muted">No tienes permisos para ver este recurso.</p>
+
+    @if (User.Identity?.IsAuthenticated ?? false)
+    {
+        <p>
+            Vuelve a <a asp-controller="Empresas" asp-action="MisEmpresas">Mis empresas</a>
+            o cierra sesión:
+        </p>
+        <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger btn-sm">Salir</button>
+        </form>
+    }
+    else
+    {
+        <a class="btn btn-primary" asp-controller="Auth" asp-action="Login">Iniciar sesión</a>
+    }
+</div>

@@ -1,0 +1,70 @@
+﻿@model LegislacionAPP.ViewModels.SegmentoVM
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    // Lee datos que enviaste desde la vista padre
+    var prefix = (string?)ViewData["Prefix"] ?? "";
+    var index = (int?)ViewData["Index"] ?? 0;
+    var tipos = (SelectList?)ViewData["TiposElemento"] ?? new SelectList(Enumerable.Empty<SelectListItem>());
+    var fotoId = (int?)ViewData["FotoId"] ?? 0;
+
+    // Prefijo para que asp-for genere name="Segmentos[i].Prop"
+    if (!string.IsNullOrEmpty(prefix))
+    {
+        ViewData.TemplateInfo.HtmlFieldPrefix = prefix;
+    }
+
+    bool esFoto = Model.id_tipo_elemento == fotoId;
+}
+
+<div class="col-12" data-segment-card>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <!-- MUY IMPORTANTE: ayuda al binder si hay indices no consecutivos -->
+            <input type="hidden" name="Segmentos.Index" value="@index" />
+
+            <input asp-for="id_segmento_legislacion" type="hidden" />
+            <input asp-for="orden" type="hidden" />
+
+            <div class="row g-2 align-items-start">
+                <div class="col-md-6">
+                    <label class="form-label">Tipo elemento</label>
+                    <select asp-for="id_tipo_elemento" class="form-select" asp-items="tipos" data-segment-select></select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Titulo</label>
+                    <input asp-for="segmentoTitulo" class="form-control" />
+                </div>
+
+                <div class="col-md-6 @(esFoto ? "" : "d-none")" data-archivo-wrapper data-foto-id="@fotoId">
+                    <label class="form-label">Archivo (solo Foto)</label>
+                    <input asp-for="archivo" type="file" class="form-control" accept="image/*" />
+                    @if (!string.IsNullOrWhiteSpace(Model.archivo_url))
+                    {
+                        <div class="small mt-1">
+                            Actual: <a href="@Model.archivo_url" target="_blank">ver</a>
+                            <input asp-for="archivo_url" type="hidden" />
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <label class="form-label">Contenido</label>
+            <textarea asp-for="contenido" class="form-control rich" rows="6"></textarea>
+            <span asp-validation-for="contenido" class="text-danger"></span>
+
+            <label class="form-label mt-2">Observaciones</label>            
+            <div class="mb-3">                
+                <input asp-for="observaciones" class="form-control" />
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+            <label class="text-danger mb-0">
+                <input type="checkbox" class="form-check-input" name="@(prefix).Eliminar" value="true" />
+                Eliminar
+            </label>
+            <input type="hidden" name="@(prefix).Eliminar" value="false" />
+        </div>
+    </div>
+</div>

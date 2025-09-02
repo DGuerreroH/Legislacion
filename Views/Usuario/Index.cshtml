@@ -1,0 +1,54 @@
+﻿@model LegislacionAPP.Models.UsuariosIndexVM
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<h2 class="mb-3">Usuarios</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input type="text" name="q" value="@Model.FiltroTexto" class="form-control" placeholder="Buscar por nombre, correo..." />
+    </div>
+    <div class="col-md-3">
+        <select name="id_estado" class="form-select" asp-items="Model.Estados">
+            <option value="">-- Estado --</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="id_pais" class="form-select" asp-items="Model.Paises">
+            <option value="">-- País --</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-grid">
+        <button class="btn btn-primary">Filtrar</button>
+    </div>
+</form>
+
+<table class="table table-sm align-middle table-hover">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>País</th>
+            <th>Estado</th>
+            <th style="width:140px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model.Items)
+        {
+            <tr>
+                <td>@($"{u.nombre} {u.apellido}".Trim())</td>
+                <td>@u.correo</td>
+                <td>@u.id_paisNavigation?.nombre</td>
+                <td>@u.id_estadoNavigation?.nombre</td>
+                <td class="text-end">
+                    <a asp-action="Details" asp-route-id="@u.id_usuario" class="btn btn-outline-secondary btn-sm">Ver</a>
+                    <a asp-action="Edit" asp-route-id="@u.id_usuario" class="btn btn-outline-primary btn-sm">Editar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Create" class="btn btn-success">Nuevo usuario</a>

@@ -1,0 +1,80 @@
+﻿@model IEnumerable<LegislacionAPP.Models.EmpresaIndexRowVM>
+@{
+    ViewData["Title"] = "Empresas";
+    string PlaceholderLogo = Url.Content("~/img/logo-placeholder.png"); // o "https://via.placeholder.com/96"
+    string EstadoClase(string e) => e switch
+    {
+        "Activa"     => "success",
+        "Inactiva"   => "secondary",
+        "Borrador"   => "warning",
+        "Archivada"  => "dark",
+        _            => "light"
+    };
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">Empresas</h3>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nueva empresa
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Aún no hay empresas. Haz clic en <strong>Nueva empresa</strong> para crear la primera.
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var e in Model)
+        {
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <img src="@(string.IsNullOrWhiteSpace(e.logo) ? PlaceholderLogo : e.logo)"
+                                 alt="Logo @e.nombre"
+                                 class="rounded"
+                                 style="width:72px;height:72px;object-fit:cover;box-shadow:0 0 0 2px rgba(0,0,0,.05);" />
+                            <div class="ms-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <h5 class="mb-0">@e.nombre</h5>
+                                    <span class="badge text-bg-@EstadoClase(e.estado)">@e.estado</span>
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    <i class="bi bi-geo-alt me-1"></i>@e.pais
+                                    <span class="mx-1">•</span>
+                                    <i class="bi bi-diagram-3 me-1"></i>@e.sector
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-calendar3 me-1"></i>
+                                    Creada: @e.fecha_creacion.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 pt-0">
+                        <div class="d-flex gap-2">
+                            <a asp-action="Edit" asp-route-empresaId="@e.id_empresa" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil-square me-1"></i> Editar
+                            </a>
+                            <a asp-action="Details" asp-route-empresaId="@e.id_empresa" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-eye me-1"></i> Detalles
+                            </a>
+                            @{
+                                var confirmMsg = $"¿Eliminar la empresa \"{e.nombre}\"?";
+                            }
+                            <a asp-action="Delete" asp-route-empresaId="@e.id_empresa"
+                               class="btn btn-outline-danger btn-sm"
+                               onclick='return confirm("@confirmMsg");'>
+                                <i class="bi bi-trash3 me-1"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

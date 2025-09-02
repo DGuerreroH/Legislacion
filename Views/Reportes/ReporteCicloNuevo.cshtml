@@ -1,0 +1,306 @@
+﻿@model LegislacionAPP.Models.ReporteCicloVM
+@{
+    ViewData["Title"] = "Informe de auditoría de cumplimiento";
+
+    // IDs de estado (ajusta si cambian en BD)
+    const int EST_CUMPLE = 6;
+    const int EST_PARCIAL = 10;
+    const int EST_NOCUMPLE = 7;
+
+    var paisAuditor = Model?.Auditor?.id_paisNavigation?.nombre ?? "";
+    var paisEmpresa = Model?.Empresa?.id_paisNavigation?.nombre ?? "";
+}
+
+@* ====== Estilos compatibles HTML/PDF (sin variables de Bootstrap) ====== *@
+<style>
+    .report-wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .justify {
+        text-align: justify;
+        text-justify: inter-word;
+    }
+
+    .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: .875rem;
+        line-height: 1;
+    }
+
+    .pill-success {
+        background: #28a745 !important;
+        color: #ffffff !important;
+    }
+
+    .pill-warning {
+        background: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    .pill-danger {
+        background: #dc3545 !important;
+        color: #ffffff !important;
+    }
+
+    .pill-secondary {
+        background: #6c757d !important;
+        color: #ffffff !important;
+    }
+
+    .sem {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .sem-ok {
+        background: #28a745 !important;
+    }
+
+    .sem-warn {
+        background: #ffc107 !important;
+    }
+
+    .sem-bad {
+        background: #dc3545 !important;
+    }
+
+    .sem-pend {
+        background: #6c757d !important;
+    }
+
+    .evi-link {
+        text-decoration: none;
+        border-bottom: 1px dotted #6c757d;
+    }
+
+    .evi-link:hover {
+        text-decoration: underline;
+    }
+
+    @@media print {
+        .no-print {
+            display: none !important;            
+        }
+
+        .row.row-cols-sm-2 > * {
+            width: 50% !important;
+        }
+
+        .row.row-cols > * {
+            width: 50% !important;
+        }
+
+        a {
+            color: #000;
+            text-decoration: underline;
+        }
+    }
+</style>
+
+@* ====== Helpers de estado ====== *@
+@functions {
+    const int EST_CUMPLE = 6;
+    const int EST_PARCIAL = 10;
+    const int EST_NOCUMPLE = 7;
+
+    string EstadoTexto(int? id) => id switch
+    {
+        EST_CUMPLE => "Cumple",
+        EST_PARCIAL => "Cumple Parcialmente",
+        EST_NOCUMPLE => "No cumple",
+        _ => "Pendiente"
+    };
+    string EstadoClase(int? id) => id switch
+    {
+        EST_CUMPLE => "pill pill-success",
+        EST_PARCIAL => "pill pill-warning",
+        EST_NOCUMPLE => "pill pill-danger",
+        _ => "pill pill-secondary"
+    };
+    string SemClase(int? id) => id switch
+    {
+        EST_CUMPLE => "sem sem-ok",
+        EST_PARCIAL => "sem sem-warn",
+        EST_NOCUMPLE => "sem sem-bad",
+        _ => "sem sem-pend"
+    };
+}
+
+<div class="report-wrap container my-3">
+    <div class="d-flex justify-content-between align-items-start">
+        <h1 class="h4 mb-3">Informe de auditoría de cumplimiento a @Model?.Legislacion?.titulo</h1>
+        <a asp-action="Ciclos"
+           asp-controller="Legislacion"
+           asp-route-legislacionId="@Model?.Legislacion?.id_legislacion"
+           class="btn btn-outline-secondary no-print">Volver</a>
+    </div>    
+    <br />
+    <div class="text-muted mb-3">
+        <div class="fw-semibold">
+            Empresa @Model?.Empresa?.nombre
+            @if (!string.IsNullOrEmpty(paisEmpresa))
+            {
+                <span> (@paisEmpresa)</span>
+            }
+        </div>
+        <div>
+            Inicio auditoria: @Model?.CicloAuditoria?.fecha_inicio.ToString("dd/MM/yyyy HH:mm")
+            · Cierre auditoria: @(Model?.CicloAuditoria?.fecha_cierre?.ToString("dd/MM/yyyy HH:mm") ?? "—")
+        </div>
+        <div>
+            Auditor: @((Model?.Auditor?.nombre + " " + Model?.Auditor?.apellido)?.Trim())
+            @if (!string.IsNullOrEmpty(paisAuditor))
+            {
+                <span> · @paisAuditor</span>
+            }
+        </div>
+    </div>
+
+    <!-- Intro -->
+    <div class="fs-5 justify lh-lg">
+        La auditoría tuvo por objeto evaluar el grado de alineación de la empresa @(Model.Empresa.nombre),
+        con domicilio en @(Model.EmpresaPais) y representada legalmente por @(Model.Empresa.representante),
+        con el número de identificación fiscal @(Model.Empresa.nit), frente a los requerimientos establecidos en @(Model.Legislacion.titulo).
+        El proceso incluyó la revisión de políticas internas, la verificación de controles tecnológicos, el análisis de registros de incidentes y
+        la evaluación de los procedimientos de cooperación con autoridades competentes.
+    </div>
+    <br />
+    <br />
+
+    <!-- KPIs (2 x 2) -->
+    <div class="row g-3 row-cols-1 row-cols-sm-2 mb-4">
+        <div class="col">
+            <div class="stat-card text-center p-3 border rounded-3 h-100">
+                <div class="display-6 fw-bold">@(Model?.CicloAuditoria?.porcentaje_aprobado ?? 0)%</div>
+                <div class="text-muted small">Cumplimiento global</div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="stat-card text-center p-3 border rounded-3 h-100">
+                <div class="display-6 fw-bold">@Model.Articulos.Count(a => a.id_estado == 6)</div>
+                <div class="text-muted small">Cumple</div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="stat-card text-center p-3 border rounded-3 h-100">
+                <div class="display-6 fw-bold">@Model.Articulos.Count(a => a.id_estado == 10)</div>
+                <div class="text-muted small">Cumple Parcialmente</div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="stat-card text-center p-3 border rounded-3 h-100">
+                <div class="display-6 fw-bold">@Model.Articulos.Count(a => a.id_estado == 7)</div>
+                <div class="text-muted small">No cumple</div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Resumen -->
+    <h2 class="h5 my-3">Resumen de artículos</h2>
+    <div class="table-responsive mb-4">
+        <table class="table align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:60%">Artículo</th>
+                    <th>Estado</th>
+                    <th class="text-end">Ir al detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Articulos.Count; i++)
+                {
+                    var a = Model.Articulos[i];
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@(a.segmentoTitulo)</div>
+                        </td>
+                        <td>
+                            <span class="@EstadoClase(a.id_estado)">@EstadoTexto(a.id_estado)</span>
+                        </td>
+                        <td class="text-end">
+                            <a href="#art_@i" class="btn btn-outline-secondary btn-sm no-print">Ver</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Detalle -->
+    <h2 class="h5 mb-3">Detalle por artículos</h2>
+    @for (int i = 0; i < Model.Articulos.Count; i++)
+    {
+        var a = Model.Articulos[i];
+        <div id="art_@i" class="card mb-4 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="@SemClase(a.id_estado)"></span>
+                    <strong>@a.segmentoTitulo</strong>
+                </div>
+                <span class="@EstadoClase(a.id_estado)">@EstadoTexto(a.id_estado)</span>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="text-muted fw-semibold mb-1">Contenido</div>
+                    <div class="rich-view border rounded p-3 bg-white">
+                        @Html.Raw(a.contenido)
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(a.observaciones))
+                {
+                    <div class="mb-3">
+                        <div class="text-muted fw-semibold mb-1">Observación del auditor</div>
+                        <div>@a.observaciones</div>
+                    </div>
+                }
+
+                <div>
+                    <div class="text-muted fw-semibold mb-1">Evidencias</div>
+                    @if (a.Evidencias == null || a.Evidencias.Count == 0)
+                    {
+                        <div class="text-muted small">Sin evidencias adjuntas.</div>
+                    }
+                    else
+                    {
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var e in a.Evidencias)
+                            {
+                                var nombre = !string.IsNullOrWhiteSpace(e.nombre_archivo)
+                                ? e.nombre_archivo
+                                : (System.IO.Path.GetFileName(e.contenido_url) ?? "evidencia");
+                                <li class="mb-1">
+                                    <a class="evi-link" href="@e.contenido_url" target="_blank" rel="noopener">@nombre</a>
+                                    <span class="text-muted small">
+                                        @((e.mime_type?.Split('/')?.LastOrDefault()) ?? "")
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Pie -->
+    <div class="fs-7 justify lh-lg">
+        <div>Este informe será entregado al representante legal de la empresa. En caso de hallazgos, se sugiere plan de acción correctiva.</div>
+        <div class="mt-3">
+            <div>Firma del auditor: @((Model?.Auditor?.nombre + " " + Model?.Auditor?.apellido)?.Trim())</div>
+            <div>Fecha: @DateTime.Now.ToString("dd 'de' MMMM 'de' yyyy")</div>
+        </div>
+    </div>
+</div>
