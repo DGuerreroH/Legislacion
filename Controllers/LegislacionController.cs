@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
+using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -18,10 +20,8 @@ public class LegislacionController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
-    private const string AliasAutogen = "Delitos_Venezuela.pdf";
-    private string PlantillaPath =>
-        Path.Combine(_env.WebRootPath, "plantillas", "ley_texto.html");
-
+    private const char ITEM_SEP = '|';
+    private const string INNER_SEP = "::=";
     public LegislacionController(AppDbContext context, IWebHostEnvironment env)
     {
         _context = context;
@@ -147,7 +147,6 @@ public class LegislacionController : Controller
 
         _context.Add(entidad);
         await _context.SaveChangesAsync();
-        bool autoCreate = false;
         if (vm.Pdf != null && vm.Pdf.Length > 0)
         {
             var folder = Path.Combine(_env.WebRootPath, "uploads", "legislaciones", entidad.id_legislacion.ToString());
@@ -162,13 +161,12 @@ public class LegislacionController : Controller
 
             entidad.pdf_url = $"/uploads/legislaciones/{entidad.id_legislacion}/{fileName}";
             _context.Update(entidad);
-            autoCreate = vm.Pdf.FileName.ToLower() == AliasAutogen.ToLower() ? true : false ;
             await _context.SaveChangesAsync();
         }
-
-        if (autoCreate)
+        string path = getPath(vm?.Pdf?.FileName);
+        if (!String.IsNullOrEmpty(path))
         {
-            var raw = await System.IO.File.ReadAllTextAsync(PlantillaPath);
+            var raw = await System.IO.File.ReadAllTextAsync(path);
             var parsed = ParseSegments(raw); // | y %
 
             int orden = 1;
@@ -538,7 +536,8 @@ public class LegislacionController : Controller
     }
 
     private static readonly Regex ClassRegex =
-        new Regex(@"<div\s+[^>]*class\s*=\s*""(?<cls>[^""]+)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        new Regex(@"<div\s+[^>]*class\s*=\s*(?:""(?<cls>[^""]+)""|'(?<cls>[^']+)')",
+                  RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private enum SegmentoTipo { Titulo = 1, Articulo = 4, Otro = 10 }
 
@@ -568,19 +567,26 @@ public class LegislacionController : Controller
         if (string.IsNullOrWhiteSpace(raw)) return result;
 
         // 1) Split por '|'
-        var items = raw.Split('|', StringSplitOptions.RemoveEmptyEntries);
+        var items = raw.Split(ITEM_SEP, StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var itemRaw in items)
         {
             var item = itemRaw.Trim();
             if (item.Length == 0) continue;
 
-            // 2) "Nombre%HTML"
-            var idx = item.IndexOf('%');
-            if (idx <= 0 || idx >= item.Length - 1) continue;
+            // 2) "Nombre::=HTML" (con fallback opcional a '%')
+            int sepLen = INNER_SEP.Length;
+            int idx = item.IndexOf(INNER_SEP, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                // Soporte legacy (opcional)
+                idx = item.IndexOf('%');
+                sepLen = (idx >= 0) ? 1 : sepLen;
+            }
+            if (idx < 0 || idx == 0 || idx + sepLen >= item.Length) continue;
 
-            var nombre = item[..idx].Trim();
-            var html = item[(idx + 1)..].Trim();
+            var nombre = item.Substring(0, idx).Trim();
+            var html = item.Substring(idx + sepLen).Trim();
             if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(html)) continue;
 
             // 3) Detectar class del primer <div>
@@ -604,6 +610,28 @@ public class LegislacionController : Controller
             .Where(u => u.correo == email)
             .Select(u => (int?)u.id_usuario)
             .FirstOrDefaultAsync();
+    }
+    private string getPath(string name)
+    {
+         name = String.IsNullOrEmpty(name) ? String.Empty : name.ToLower();
+        string archivo = String.Empty;        
+        switch (name)
+        {
+            case "delitos_venezuela.pdf":
+                archivo = "ley_texto.html";
+                break;
+            case "res_jm-104-2021.pdf":
+                archivo = "ley_JM104.html";
+                break;
+            case "jm-104-2021.pdf":
+                archivo = "ley_JM104.html";
+                break;
+        }
+
+        if (!string.IsNullOrEmpty(name)){
+            archivo = Path.Combine(_env.WebRootPath, "plantillas", archivo);
+        }          
+        return archivo;
     }
 
 }
