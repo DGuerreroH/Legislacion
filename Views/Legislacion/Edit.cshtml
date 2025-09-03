@@ -80,16 +80,22 @@
                         <input asp-for="Pdf" type="file" accept="application/pdf" class="form-control" />
                         <div class="help-muted mt-1">Sube un PDF para esta legislación.</div>
                     </div>
-
-                    @if (!string.IsNullOrWhiteSpace(Model.pdf_url))
+                    @{
+                        var pdfSrc = !string.IsNullOrWhiteSpace(Model.pdf_url)
+                        ? Url.Content(Model.pdf_url) + "#toolbar=1"
+                        : null;
+                    }
+                    @if (pdfSrc != null)
                     {
                         <div>
                             <div class="fw-semibold mb-2">Vista previa</div>
                             <div class="pdf-embed overflow-hidden">
-                                <embed src="@Model.pdf_url#toolbar=1" type="application/pdf" width="100%" height="380" />
+                                <embed src="@pdfSrc" type="application/pdf" width="100%" height="380" />
                             </div>
                             <div class="mt-2">
-                                <a class="btn btn-sm btn-outline-secondary" href="@Model.pdf_url" target="_blank">Abrir en pestaña</a>
+                                <a class="btn btn-sm btn-outline-secondary" href="@Url.Content(Model.pdf_url)" target="_blank">
+                                    Abrir en pestaña
+                                </a>
                             </div>
                         </div>
                     }

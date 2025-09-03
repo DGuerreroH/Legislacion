@@ -14,9 +14,12 @@
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h3 class="mb-0">Empresas</h3>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Nueva empresa
-    </a>
+    @if (User.IsInRole("Administrador") || User.IsInRole("Admin"))
+    {
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nueva empresa
+        </a>    
+    }
 </div>
 
 @if (!Model.Any())
@@ -59,18 +62,24 @@ else
                         <div class="d-flex gap-2">
                             <a asp-action="Edit" asp-route-empresaId="@e.id_empresa" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-pencil-square me-1"></i> Editar
-                            </a>
-                            <a asp-action="Details" asp-route-empresaId="@e.id_empresa" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-eye me-1"></i> Detalles
-                            </a>
+                            </a>            
                             @{
                                 var confirmMsg = $"¿Eliminar la empresa \"{e.nombre}\"?";
                             }
-                            <a asp-action="Delete" asp-route-empresaId="@e.id_empresa"
-                               class="btn btn-outline-danger btn-sm"
-                               onclick='return confirm("@confirmMsg");'>
-                                <i class="bi bi-trash3 me-1"></i> Eliminar
-                            </a>
+                            @if (User.IsInRole("Administrador") || User.IsInRole("Admin"))
+                            {
+                                <form asp-action="Delete"
+                                    asp-route-empresaId="@e.id_empresa"
+                                      method="post"
+                                      class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm"
+                                            onclick='return confirm("@confirmMsg");'>
+                                        <i class="bi bi-trash3 me-1"></i> Eliminar
+                                    </button>
+                                </form>
+                            }
                         </div>
                     </div>
                 </div>

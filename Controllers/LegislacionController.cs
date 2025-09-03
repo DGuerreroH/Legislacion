@@ -147,21 +147,17 @@ public class LegislacionController : Controller
 
         _context.Add(entidad);
         await _context.SaveChangesAsync();
-        if (vm.Pdf != null && vm.Pdf.Length > 0)
+
+        if (vm.Pdf is { Length: > 0 })
         {
-            var folder = Path.Combine(_env.WebRootPath, "uploads", "legislaciones", entidad.id_legislacion.ToString());
-            Directory.CreateDirectory(folder);
+            var dir = Path.Combine(_env.WebRootPath, "uploads", "legislaciones", entidad.id_legislacion.ToString());
+            Directory.CreateDirectory(dir);
 
-            var ext = Path.GetExtension(vm.Pdf.FileName);
-            var fileName = $"documento{ext}";
-            var dest = Path.Combine(folder, fileName);
+            var name = $"{DateTime.UtcNow:yyyyMMddHHmmssfff}{Path.GetExtension(vm.Pdf.FileName)}";
+            using var fs = System.IO.File.Create(Path.Combine(dir, name));
+            await vm.Pdf.CopyToAsync(fs);
 
-            using (var fs = new FileStream(dest, FileMode.Create))
-                await vm.Pdf.CopyToAsync(fs);
-
-            entidad.pdf_url = $"/uploads/legislaciones/{entidad.id_legislacion}/{fileName}";
-            _context.Update(entidad);
-            await _context.SaveChangesAsync();
+            entidad.pdf_url = $"/uploads/legislaciones/{entidad.id_legislacion}/{name}";
         }
         string path = getPath(vm?.Pdf?.FileName);
         if (!String.IsNullOrEmpty(path))
@@ -238,7 +234,7 @@ public class LegislacionController : Controller
         var fotoId = await _context.TipoElemento
             .Where(t => t.nombre == "Imagen")
             .Select(t => t.id_tipo_elemento)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync();               
 
         var vm = new LegislacionEditVM
         {
@@ -272,7 +268,8 @@ public class LegislacionController : Controller
             Estados = new SelectList(_context.Estado, "id_estado", "codigo", l.id_estado),
             Ambitos = new SelectList(_context.AmbitoAplicacion, "id_ambito_aplicacion", "nombre", l.id_ambito_aplicacion),
             TiposElemento = new SelectList(_context.TipoElemento, "id_tipo_elemento", "nombre")
-        };
+        };        
+        vm.pdf_url = Path.Combine(_env.WebRootPath, vm.pdf_url.Replace('/', Path.DirectorySeparatorChar));
 
         return View(vm);
     }

@@ -3,6 +3,8 @@
     var esAuditor = User.IsInRole("Auditor");
     var esAdmin = User.IsInRole("Admin") || User.IsInRole("Administrador");
     var esDigi = User.IsInRole("Digitalizador");
+    var esGerente = User.IsInRole("Gerente");
+
 }
 
 <section class="hero-white">
@@ -17,36 +19,8 @@
                     <a asp-controller="Empresas" asp-action="Index" class="btn btn-primary btn-lg">
                         <i class="bi bi-building me-2"></i> Mis empresas
                     </a>
-              @*       @if (esAuditor)
-                    {
-                        <a asp-controller="Auditoria" asp-action="Index" class="btn btn-outline-primary btn-lg">
-                            <i class="bi bi-clipboard-check me-2"></i> Auditar
-                        </a>
-                    }
-                    @if (esDigi)
-                    {
-                        <a asp-controller="Legislacion" asp-action="Index" class="btn btn-outline-primary btn-lg">
-                            <i class="bi bi-journal-plus me-2"></i> Legislaciones
-                        </a>
-                    } *@
                 </div>
             </div>
-@* 
-            <div class="col-lg-5">
-                <div class="hero-illustration rounded-4 border">
-                    <div class="p-4">
-                        <div class="small text-uppercase text-primary fw-semibold mb-2">Estado</div>
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle">Sistema operativo</span>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">v1.0</span>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-primary" style="width: 42%"></div>
-                        </div>
-                        <div class="text-muted small mt-2">Avance general</div>
-                    </div>
-                </div>
-            </div> *@
         </div>
 
         <div class="row g-3 mt-5">
@@ -54,19 +28,19 @@
                 <a asp-controller="Empresas" asp-action="Index" class="card card-quick h-100">
                     <div class="card-body">
                         <div class="icon bg-primary-subtle text-primary"><i class="bi bi-building"></i></div>
-                        <div class="title">Empresas</div>
-                        <div class="subtitle">Ver y administrar</div>
+                        <div class="title">Gestiones por empresas</div>
+                        <div class="subtitle">Empresas asignadas</div>
                     </div>
                 </a>
             </div>
-            @if (esAdmin)
+            @if (esAdmin || esGerente)
             {
                 <div class="col-md-6 col-lg-3">
                     <a asp-controller="Empresa" asp-action="Index" class="card card-quick h-100">
                         <div class="card-body">
                             <div class="icon bg-primary-subtle text-primary"><i class="bi bi-building"></i></div>
-                            <div class="title">Admin Empresa</div>
-                            <div class="subtitle">Lista empresa</div>
+                            <div class="title">Administrar Empresas</div>
+                            <div class="subtitle">Editar empresa</div>
                         </div>
                     </a>
                 </div>

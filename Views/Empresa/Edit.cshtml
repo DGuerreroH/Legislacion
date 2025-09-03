@@ -1,6 +1,6 @@
 ﻿@model LegislacionAPP.Models.EmpresaFormVM
 @{
-    ViewData["Title"] = "Editar empresa";
+    ViewData["Title"] = Model.IsNew ? "Crear empresa" : "Editar empresa";
     var logoUrl = string.IsNullOrWhiteSpace(Model.logo)
         ? Url.Content("~/img/placeholder-logo.svg")
         : Model.logo;

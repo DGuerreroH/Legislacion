@@ -230,13 +230,7 @@ else
                           
 
                             @if (User.IsInRole("Administrador") || User.IsInRole("Admin"))
-                            {
-                                <a class="btn btn-outline-primary btn-sm"
-                                   asp-controller="Empresa"
-                                   asp-action="Edit"
-                                   asp-route-empresaId="@e.id_empresa">
-                                    <i class="bi bi-pencil me-1"></i> Editar
-                                </a>
+                            {                              
                                 <a asp-controller="CMMI"
                                    asp-action="Index"
                                    asp-route-empresaId="@e.id_empresa"

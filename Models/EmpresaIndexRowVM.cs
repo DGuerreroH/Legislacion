@@ -9,5 +9,6 @@
         public string sector { get; set; } = "";
         public string estado { get; set; } = "";       // ej.: "Activa", "Inactiva"
         public DateTime fecha_creacion { get; set; }
+        public int id_estado { get; set; }
     }
 }
