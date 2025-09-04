@@ -1,25 +1,128 @@
 ﻿@{
     ViewData["Title"] = "Acceso denegado";
-    Context.Response.StatusCode = 403; // opcional: marca código HTTP
+    Context.Response.StatusCode = 403; // Marca el código HTTP
 }
 
-<div class="container py-4">
-    <h1 class="display-6">Acceso denegado</h1>
-    <p class="text-muted">No tienes permisos para ver este recurso.</p>
+<style>
+    .denied-wrap {
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-    @if (User.Identity?.IsAuthenticated ?? false)
-    {
-        <p>
-            Vuelve a <a asp-controller="Empresas" asp-action="MisEmpresas">Mis empresas</a>
-            o cierra sesión:
-        </p>
-        <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-outline-danger btn-sm">Salir</button>
-        </form>
+    .denied-card {
+        border: 1px solid #eef2f6;
+        border-radius: 1.25rem;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 12px 30px rgba(2,6,23,.06);
+        max-width: 720px;
+        width: 100%;
     }
-    else
-    {
-        <a class="btn btn-primary" asp-controller="Auth" asp-action="Login">Iniciar sesión</a>
+
+    .denied-head {
+        background: linear-gradient(135deg, #0d6efd 0%, #6f42c1 100%);
+        color: #fff;
+        padding: 2rem 1.75rem 1.5rem;
     }
+
+    .icon-bubble {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.15);
+        backdrop-filter: saturate(120%);
+        margin-right: .75rem;
+        font-size: 1.4rem;
+    }
+
+    .denied-body {
+        padding: 1.5rem 1.75rem;
+    }
+
+    .soft-list li {
+        margin: .25rem 0;
+        color: #6b7280
+    }
+
+    .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem
+    }
+
+    .small-muted {
+        color: #6c757d;
+        font-size: .9rem
+    }
+</style>
+
+<div class="container denied-wrap py-4">
+    <div class="denied-card">
+
+        <!-- Header -->
+        <div class="denied-head">
+            <div class="d-flex align-items-center">
+                <div class="icon-bubble">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <div>
+                    <h1 class="h4 mb-1 text-white">Acceso denegado</h1>
+                    <div class="small text-white-50">Código 403 · No tienes permisos para ver este recurso.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="denied-body">
+            <p class="mb-2">
+                Puede deberse a que tu rol no tenga acceso, el recurso pertenezca a otra empresa o la sesión haya cambiado.
+            </p>
+
+            <ul class="soft-list mb-3">
+                <li>Verifica que estés entrando con el <strong>usuario correcto</strong>.</li>
+                <li>Si crees que es un error, contacta a un administrador para <strong>asignación de permisos</strong>.</li>
+            </ul>
+
+            @if (User.Identity?.IsAuthenticated ?? false)
+            {
+                <div class="btn-row mb-2">                 
+
+                    <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+                        </button>
+                    </form>
+
+                    <a class="btn btn-outline-secondary"
+                       href="javascript:history.back()">
+                        <i class="bi bi-arrow-left me-1"></i> Volver atrás
+                    </a>
+                </div>
+
+                <div class="small-muted">
+                    Sesión: <strong>@User.Identity?.Name</strong>
+                </div>
+            }
+            else
+            {
+                <div class="btn-row">
+                    <a class="btn btn-primary"
+                       asp-controller="Auth" asp-action="Login">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
+                    </a>
+                    <a class="btn btn-outline-secondary"
+                       href="javascript:history.back()">
+                        <i class="bi bi-arrow-left me-1"></i> Volver atrás
+                    </a>
+                </div>
+            }
+        </div>
+
+    </div>
 </div>

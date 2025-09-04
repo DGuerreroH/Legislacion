@@ -252,16 +252,43 @@ namespace LegislacionAPP.Controllers
         [HttpGet]
         public async Task<IActionResult> Certificado(int empresaId)
         {
+            var vm = await BuildCertVM(empresaId);
+            if (vm == null)
+            {
+                TempData["err"] = "No existe una evaluación CMMI cerrada para esta empresa.";
+                return RedirectToAction("Index", new { empresaId });
+            }
+            vm.EsPdf = false;
+            return View("Certificado", vm); // HTML normal
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CertificadoPdf(int empresaId)
+        {
+            var vm = await BuildCertVM(empresaId);
+            if (vm == null)
+            {
+                TempData["err"] = "No existe una evaluación CMMI cerrada para esta empresa.";
+                return RedirectToAction("Index", new { empresaId });
+            }
+            vm.EsPdf = true;
+            return new Rotativa.AspNetCore.ViewAsPdf("Certificado", vm)
+            {
+                FileName = $"CMMI_{vm.Empresa}_{vm.FechaEmision:yyyyMMdd}.pdf",
+                PageSize = Rotativa.AspNetCore.Options.Size.A4,
+                PageMargins = new Rotativa.AspNetCore.Options.Margins(12, 12, 12, 12)
+            };
+            
+        }
+
+        private async Task<CMMICertificadoVM> BuildCertVM(int empresaId)
+        {
             var eval = await _db.CMMIEvaluacion
                 .Where(e => e.id_empresa == empresaId && e.fecha_cierre != null)
                 .OrderByDescending(e => e.fecha_cierre)
                 .FirstOrDefaultAsync();
 
-            if (eval == null)
-            {
-                TempData["err"] = "No existe una evaluación CMMI cerrada para esta empresa.";
-                return RedirectToAction("Index", new { empresaId });
-            }
+            if (eval == null) return null!;
 
             var empresa = await _db.Empresa
                 .Include(e => e.id_paisNavigation)
@@ -270,18 +297,11 @@ namespace LegislacionAPP.Controllers
             var auditor = await _db.Usuario
                 .FirstOrDefaultAsync(u => u.id_usuario == eval.id_usuario_auditor);
 
-            // evalId = id de la evaluación CMMI cerrada a reportar
             var cats = await _db.CMMIRespuesta
                 .Where(r => r.id_evaluacion == eval.id_evaluacion)
-                .Join(_db.CMMIPregunta,
-                      r => r.id_ccmi_pregunta,
-                      p => p.id_cmmi_pregunta,
-                      (r, p) => new { r, p })
-                .Join(_db.CCMICategoria,
-                      rp => rp.p.id_ccmi_categoria,
-                      c => c.id_ccmi_categoria,
-                      (rp, c) => new { rp.r, rp.p, c })
-                .GroupBy(x => new { x.c.id_ccmi_categoria, x.c.nombre , x.c.codigo , x.c.peso_categoria }) 
+                .Join(_db.CMMIPregunta, r => r.id_ccmi_pregunta, p => p.id_cmmi_pregunta, (r, p) => new { r, p })
+                .Join(_db.CCMICategoria, rp => rp.p.id_ccmi_categoria, c => c.id_ccmi_categoria, (rp, c) => new { rp.r, rp.p, c })
+                .GroupBy(x => new { x.c.id_ccmi_categoria, x.c.nombre, x.c.codigo, x.c.peso_categoria })
                 .Select(g => new ItemCategoriaVM
                 {
                     Codigo = g.Key.codigo,
@@ -289,12 +309,12 @@ namespace LegislacionAPP.Controllers
                     Porcentaje = g.Sum(x => x.r.valor) / g.Count(),
                 })
                 .OrderBy(x => x.Codigo)
-                .ToListAsync();            
+                .ToListAsync();
 
             decimal pctGlobal = (decimal)(eval.puntaje_global ?? cats.DefaultIfEmpty().Average(c => c?.Porcentaje ?? 0m));
             pctGlobal = Math.Round(pctGlobal, 2);
 
-            var vm = new CMMICertificadoVM
+            return new CMMICertificadoVM
             {
                 Empresa = empresa!,
                 EmpresaPais = empresa?.id_paisNavigation?.nombre,
@@ -309,17 +329,8 @@ namespace LegislacionAPP.Controllers
                 LogoUrl = empresa?.logo,
                 EsPdf = false
             };
-
-            return View("Certificado", vm);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> CertificadoPdf(int empresaId)
-        {
-            var res = await Certificado(empresaId) as ViewResult;
-            if (res?.Model is CMMICertificadoVM vm) vm.EsPdf = true;      
-            return View("Certificado", res?.Model);
-        }
         private static (decimal porc, int nivel) Calcular(CMMIEvaluarVM vm)
         {
             decimal sumPeso = 0, sumScore = 0;

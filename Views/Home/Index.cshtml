@@ -33,18 +33,6 @@
                     </div>
                 </a>
             </div>
-            @if (esAdmin || esGerente)
-            {
-                <div class="col-md-6 col-lg-3">
-                    <a asp-controller="Empresa" asp-action="Index" class="card card-quick h-100">
-                        <div class="card-body">
-                            <div class="icon bg-primary-subtle text-primary"><i class="bi bi-building"></i></div>
-                            <div class="title">Administrar Empresas</div>
-                            <div class="subtitle">Editar empresa</div>
-                        </div>
-                    </a>
-                </div>
-            }
             <div class="col-md-6 col-lg-3">
                 <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
                     @Html.AntiForgeryToken()

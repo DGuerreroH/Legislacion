@@ -7,6 +7,8 @@
         public int id_empresa { get; set; }
         public int id_evaluacion { get; set; }
         public string Empresa { get; set; } = "";
+        public string RepresentanteEmpresa { get; set; } = "";
+
         public string Auditor { get; set; } = "";
         public DateTime fecha_inicio { get; set; }
         public DateTime? fecha_cierre { get; set; }

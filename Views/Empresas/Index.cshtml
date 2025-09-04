@@ -10,6 +10,14 @@
         "archivada" => "badge-soft-secondary",
         _ => "badge-soft-secondary"
     };
+
+    string EstadoLine(string? estado) => (estado ?? "").Trim().ToLower() switch
+    {
+        "activa" => "line-success",
+        "inactiva" => "line-secondary",
+        "archivada" => "line-secondary",
+        _ => "line-secondary"
+    };
 }
 
 <style>
@@ -29,45 +37,69 @@
     /* ---- Card empresa ---- */
     .entity-card {
         border: 1px solid #eef2f6;
-        border-radius: 16px;
+        border-radius: 18px;
         overflow: hidden;
-        background: #fff
+        background: #fff;
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        position: relative;
     }
 
-        .entity-card .logo {
-            width: 64px;
-            height: 64px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 1px solid #eef2f6
+        .entity-card:hover {
+            transform: translateY(-2px);
+            border-color: #e2e8f0;
+            box-shadow: 0 10px 30px rgba(2,6,23,.06);
+        }
+        /* Línea superior de estado */
+        .entity-card .topline {
+            height: 4px;
+            width: 100%;
         }
 
-        .entity-card .card-body {
-            padding: 16px 16px 8px 16px
-        }
+    .line-success {
+        background: linear-gradient(90deg,#2ecc71,#27ae60);
+    }
 
-        .entity-card .card-footer {
-            padding: 12px 16px 16px 16px
-        }
+    .line-secondary {
+        background: linear-gradient(90deg,#e5e7eb,#dde2ea);
+    }
 
-    /* ---- Action tile (CMMI) ---- */
+    .entity-card .logo {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 14px;
+        border: 1px solid #eef2f6;
+        box-shadow: 0 0 0 4px #f8fafc;
+        background: #fff;
+    }
+
+    .entity-card .card-body {
+        padding: 16px 16px 10px 16px;
+    }
+
+    .entity-card .card-footer {
+        padding: 12px 16px 16px 16px;
+    }
+
+    /* ---- Action tile ---- */
     .action-tile {
         display: flex;
         align-items: center;
         gap: .75rem;
-        padding: .8rem 1rem;
+        padding: .85rem 1rem;
         border: 1px solid #eef2f6;
         border-radius: 12px;
         background: #f8fafc;
         text-decoration: none;
         color: inherit;
-        transition: .15s ease
+        transition: .15s ease;
+        min-width: 0; /* para truncado */
     }
 
         .action-tile:hover {
             background: #f1f5f9;
             transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(15,23,42,.06)
+            box-shadow: 0 8px 22px rgba(15,23,42,.06)
         }
 
     .action-icon {
@@ -77,12 +109,27 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        flex: 0 0 44px;
+    }
+
+    .icon-blue {
         background: #e9f2ff;
-        color: #0d6efd
+        color: #0d6efd;
+    }
+
+    .icon-violet {
+        background: #f1e9ff;
+        color: #6f42c1;
+    }
+
+    .icon-emerald {
+        background: #e6f7f2;
+        color: #0f766e;
     }
 
     .action-title {
-        font-weight: 600
+        font-weight: 700;
+        letter-spacing: .1px;
     }
 
     .action-desc {
@@ -105,6 +152,20 @@
     .searchbar .form-control {
         border: 0
     }
+
+    /* ---- Responsive ---- */
+    @@media (max-width: 768px) {
+        .action-tile
+
+    {
+        padding: .7rem .8rem;
+    }
+
+    .action-title {
+        font-weight: 600;
+    }
+
+    }
 </style>
 
 <div class="d-flex align-items-center justify-content-between mb-4">
@@ -120,7 +181,9 @@
 
 @if (!(Model?.Any() ?? false))
 {
-    <div class="alert alert-info">Aún no tenés empresas asignadas.</div>
+    <div class="alert alert-info">
+        Aún no tenés empresas asignadas. <span class="text-muted">Cuando tengas acceso, aparecerán aquí.</span>
+    </div>
 }
 else
 {
@@ -129,19 +192,22 @@ else
         {
             var logo = string.IsNullOrWhiteSpace(e.logo) ? placeholder : e.logo;
             var estadoBadge = EstadoClass(e.estado);
+            var lineClass = EstadoLine(e.estado);
 
             <div class="col">
                 <div class="card entity-card h-100">
+                    <div class="topline @lineClass"></div>
+
                     <!-- Body -->
                     <div class="card-body d-flex">
                         <img src="@logo" alt="Logo @e.nombre" class="logo me-3" />
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1 min-w-0">
                             <div class="d-flex justify-content-between align-items-start">
-                                <h5 class="mb-1 text-truncate">@e.nombre</h5>
-                                <span class="badge @estadoBadge">@e.estado</span>
+                                <h5 class="mb-1 text-truncate" title="@e.nombre">@e.nombre</h5>
+                                <span class="badge @estadoBadge text-capitalize">@e.estado</span>
                             </div>
-                            <div class="text-secondary small mt-1">
-                                <i class="bi bi-geo-alt me-1"></i>@e.pais
+                            <div class="text-secondary small mt-1 d-flex align-items-center gap-2">
+                                <span class="text-muted"><i class="bi bi-geo-alt me-1"></i>@e.pais</span>
                             </div>
                         </div>
                     </div>
@@ -149,98 +215,66 @@ else
                     <!-- Footer / acciones -->
                     <div class="card-footer bg-transparent border-0">
                         <div class="d-flex flex-wrap gap-2">
+                            <!-- Info empresa -->
+                            <a asp-controller="Empresa"
+                               asp-action="Edit"
+                               asp-route-empresaId="@e.id_empresa"
+                               class="action-tile flex-grow-1" aria-label="Editar empresa @e.nombre">
+                                <div class="action-icon icon-blue">
+                                    <i class="bi bi-building-gear"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div class="action-title text-truncate">Información de la empresa</div>
+                                    <div class="action-desc text-truncate">Nombre, NIT, representante, logo…</div>
+                                </div>
+                                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                            </a>
 
+                            @* Digitalizador *@
                             @if (User.IsInRole("Digitalizador") || User.IsInRole("Digi"))
                             {
                                 <a asp-controller="Legislacion"
                                    asp-action="Index"
                                    asp-route-empresaId="@e.id_empresa"
-                                   class="action-tile flex-grow-1">
-                                    <div class="action-icon">
-                                        <i class="bi bi-journal-text"></i>
+                                   class="action-tile flex-grow-1" aria-label="Legislaciones de @e.nombre">
+                                    <div class="action-icon icon-violet">
+                                        <i class="bi bi-file-earmark-richtext"></i>
                                     </div>
                                     <div class="overflow-hidden">
                                         <div class="action-title text-truncate">Legislaciones</div>
-                                        <div class="action-desc text-truncate">Crear legislaciones</div>
+                                        <div class="action-desc text-truncate">Crear y gestionar segmentos</div>
                                     </div>
                                     <i class="bi bi-chevron-right ms-auto text-muted"></i>
                                 </a>
                             }
-                            @if (User.IsInRole("Gerente"))
+
+                            @* Gerente / Auditor *@
+                            @if (User.IsInRole("Gerente") || User.IsInRole("Auditor") || User.IsInRole("Audi"))
                             {
                                 <a asp-controller="Legislacion"
                                    asp-action="Index"
                                    asp-route-empresaId="@e.id_empresa"
-                                   class="action-tile flex-grow-1">
-                                    <div class="action-icon">
-                                        <i class="bi bi-journal-text"></i>
+                                   class="action-tile flex-grow-1" aria-label="Legislaciones de @e.nombre">
+                                    <div class="action-icon icon-violet">
+                                        <i class="bi bi-journal-check"></i>
                                     </div>
                                     <div class="overflow-hidden">
                                         <div class="action-title text-truncate">Legislaciones</div>
-                                        <div class="action-desc text-truncate">Crear legislaciones</div>
+                                        <div class="action-desc text-truncate">Crear y revisar cumplimiento</div>
                                     </div>
                                     <i class="bi bi-chevron-right ms-auto text-muted"></i>
                                 </a>
-                                <a asp-controller="CMMI"
-                                   asp-action="Index"
-                                   asp-route-empresaId="@e.id_empresa"
-                                   class="action-tile flex-grow-1">
-                                    <div class="action-icon">
-                                        <i class="bi bi-bar-chart-steps"></i>
-                                    </div>
-                                    <div class="overflow-hidden">
-                                        <div class="action-title text-truncate">Evaluaciones CMMI</div>
-                                        <div class="action-desc text-truncate">Historial y reportes</div>
-                                    </div>
-                                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                                </a>
-                            }
-                            @if (User.IsInRole("Auditor") || User.IsInRole("Audi"))
-                            {
-                                <a asp-controller="Legislacion"
-                                   asp-action="Index"
-                                   asp-route-empresaId="@e.id_empresa"
-                                   class="action-tile flex-grow-1">
-                                    <div class="action-icon">
-                                        <i class="bi bi-journal-text"></i>
-                                    </div>
-                                    <div class="overflow-hidden">
-                                        <div class="action-title text-truncate">Legislaciones</div>
-                                        <div class="action-desc text-truncate">Auditar legislaciones</div>
-                                    </div>
-                                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                                </a>
-                                <a asp-controller="CMMI"
-                                   asp-action="Index"
-                                   asp-route-empresaId="@e.id_empresa"
-                                   class="action-tile flex-grow-1">
-                                    <div class="action-icon">
-                                        <i class="bi bi-bar-chart-steps"></i>
-                                    </div>
-                                    <div class="overflow-hidden">
-                                        <div class="action-title text-truncate">Evaluaciones CMMI</div>
-                                        <div class="action-desc text-truncate">Historial y reportes</div>
-                                    </div>
-                                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                                </a>
-                            }
-                        
 
-                            <!-- Evaluaciones CMMI -->
-                          
-
-                            @if (User.IsInRole("Administrador") || User.IsInRole("Admin"))
-                            {                              
                                 <a asp-controller="CMMI"
                                    asp-action="Index"
                                    asp-route-empresaId="@e.id_empresa"
-                                   class="action-tile flex-grow-1">
-                                    <div class="action-icon">
-                                        <i class="bi bi-bar-chart-steps"></i>
+                                   class="action-tile flex-grow-1" aria-label="Evaluaciones CMMI de @e.nombre">
+                                    <div class="action-icon icon-emerald">
+                                        <i class="bi bi-graph-up-arrow"></i>
                                     </div>
                                     <div class="overflow-hidden">
                                         <div class="action-title text-truncate">Evaluaciones CMMI</div>
-                                        <div class="action-desc text-truncate">Historial y reportes</div>
+                                        <div class="action-desc text-truncate">Historial, reportes y certificados</div>
                                     </div>
                                     <i class="bi bi-chevron-right ms-auto text-muted"></i>
                                 </a>

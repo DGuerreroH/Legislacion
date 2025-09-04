@@ -262,7 +262,7 @@
               body: fd,
               headers: { 'RequestVerificationToken': getAntiForgery() }
             });
-            if (!resp.ok) { alert('Error al subir evidencia'); return; }
+            if (!resp.ok) { alert('Debe guardar para la auditoria para subir archivos'); return; }
 
             listWrap.innerHTML = await resp.text();
             input.value = '';

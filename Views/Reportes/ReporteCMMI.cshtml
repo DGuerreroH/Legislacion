@@ -2,31 +2,28 @@
 @{
     ViewData["Title"] = "Reporte CMMI";
 
-    // Muestra solo preguntas con ValorPct < 100 o comentario
-    bool SoloHallazgosDefault = true;
-           
+    // Flag server-side para expandir todo (PDF/impresión)
+    var q = ViewContext.HttpContext.Request.Query;
+    bool ForzarExpandido = (Model?.EsPdf ?? false) || (q.ContainsKey("pdf") && q["pdf"] == "1");
+
     string BgBadge(decimal pct)
     {
-        if (pct >= 75) return "bg-success";               // verde
-        if (pct >= 50) return "bg-warning text-dark";     // amarillo con texto oscuro
-        if (pct >  0)  return "bg-danger";                // rojo
-        return "bg-secondary";                            // gris
+        if (pct >= 75) return "bg-success";
+        if (pct >= 50) return "bg-warning text-dark";
+        if (pct > 0) return "bg-danger";
+        return "bg-secondary";
     }
 
     string BadgeStyle(decimal pct)
     {
-        // Colores HEX (Bootstrap 5)
         string bg, fg = "#ffffff", border;
-        if (pct >= 75)      bg = "#198754";                // success (verde)
-        else if (pct >= 50) { bg = "#ffc107"; fg = "#212529"; } // warning (amarillo + texto oscuro)
-        else if (pct > 0)   bg = "#dc3545";                // danger (rojo)
-        else                bg = "#6c757d";                // secondary (gris)
-
+        if (pct >= 75) bg = "#198754";
+        else if (pct >= 50) { bg = "#ffc107"; fg = "#212529"; }
+        else if (pct > 0) bg = "#dc3545";
+        else bg = "#6c757d";
         border = bg;
         return $"background-color:{bg};color:{fg};border:1px solid {border};";
     }
-
-
 }
 
 <style>
@@ -42,126 +39,106 @@
             line-height: 1
         }
 
-    .cat-card {
-        border: 1px solid #e9ecef;
-        border-radius: 1rem;
-        background: #fff;
-        overflow: hidden
+    .q-code {
+        background: #eef1f5;
+        color: #2b2f33;
+        border-radius: .375rem;
+        padding: .075rem .5rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-right: .5rem;
+        white-space: nowrap;
     }
 
-        .cat-card .card-header {
-            background: #fff;
-            border-bottom: 1px solid #eef2f6
+    .comment-box {
+        background: #f8f9fb;
+        border-left: 3px solid #e9ecef;
+        padding: .7rem .9rem;
+        border-radius: .375rem;
+    }
+
+    .intro-box {
+        background: #f8f9fb;
+        border-left: 4px solid #0d6efd;
+        padding: 1rem 1.25rem;
+        border-radius: .5rem;
+    }
+
+    .accordion-button .cat-pct {
+        margin-left: auto;
+        margin-left: 1.75rem;
+    }
+
+    /* Footer (firmas) */
+    .report-footer {
+        margin-top: 2rem;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+        .report-footer .signs {
+            display: flex;
+            gap: 3rem;
+            align-items: flex-end;
+            justify-content: space-between;
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
 
-    .q-code {
-        font-weight: 600;
-        white-space: nowrap
-    }
+        .report-footer .sign {
+            flex: 1 1 45%;
+            text-align: center;
+        }
 
-    .q-chip {
-        border-radius: 999px;
-        padding: .15rem .5rem;
-        font-size: .75rem
-    }
+            .report-footer .sign .line {
+                border-top: 1px solid #ced4da;
+                margin-top: 2.5rem;
+                padding-top: .25rem;
+                font-weight: 600;
+            }
 
-    .note {
-        background: #f8f9fb;
-        border-left: 3px solid #0d6efd;
-        padding: .5rem .75rem;
-        border-radius: .5rem
-    }
+        .report-footer .note {
+            margin-top: 1rem;
+            font-size: .875rem;
+            color: #6c757d;
+            text-align: center;
+        }
 
-    .table > :not(caption) > * > * {
-        border-bottom-color: #f1f3f5
-    }
-
-    .divider {
-        height: 1px;
-        background: #eef2f6;
-        margin: .75rem 0
-    }
-
-    .small-muted {
-        font-size: .85rem;
-        color: #6c757d
-    }
+    /* Impresión: sin colapsar y firmas a dos columnas aunque flex falle */
     @@media print {
-        .no-print
+        .no-print {
+            display: none !important;
+        }
 
-    {
-        display: none !important;
+        .badge {
+            background: #fff !important;
+            color: #000 !important;
+            border: 1px solid #333
+        }
+
+        *, .badge {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .report-footer .signs {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .report-footer .sign {
+            display: table-cell;
+            width: 50%;
+            vertical-align: bottom;
+            text-align: center;
+        }
+
+        .report-footer .note {
+            color: #000;
+        }
     }
-    /* En PDF/impresión, mostrar todo expandido */
-    .accordion-button {
-        pointer-events: none;
-    }
-
-    .accordion-collapse {
-        display: block !important;
-        visibility: visible !important;
-    }
-
-    }
-
-    body {
-        background: #fff
-    }
-
-    .page-head {
-        border: 0;
-        box-shadow: none
-    }
-    /* encabezado del acordeón, badge al extremo derecho */
-  .accordion-button .cat-pct{ 
-      margin-left:auto;
-      margin-left: 1.75rem;
-  }
-
-  /* “código” de la pregunta (AST-01, etc.) más discreto */
-  .q-code{
-    background:#eef1f5; color:#2b2f33; 
-    border-radius:.375rem; padding:.075rem .5rem; 
-    font-weight:600; display:inline-block; margin-right:.5rem;
-  }
-
-  /* caja para comentario grande debajo */
-  .comment-box{
-    background:#f8f9fb; border-left:3px solid #e9ecef;
-    padding:.7rem .9rem; border-radius:.375rem;
-  }
-
-  /* PDF/impresión: sin colapsar y con badges legibles */
-  @@media print{
-    .accordion-button{ pointer-events:none }
-    .accordion-collapse{ display:block !important; height:auto !important; visibility:visible !important }
-    .accordion-button::after{ display:none }
-    .badge{ background:#fff !important; color:#000 !important; border:1px solid #333 }
-     *, .badge{
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-  }
-
-  /* Si la vista tiene flag EsPdf desde el servidor, aplica lo mismo */
-  @if (Model.EsPdf){
-    @: .accordion-button{ pointer-events:none }
-    @: .accordion-collapse{ display:block !important; height:auto !important; visibility:visible !important }
-    @: .accordion-button::after{ display:none }
-    @: .badge{ background:#fff !important; color:#000 !important; border:1px solid #333 }
-  }
-    
 </style>
-@functions {
-    // Devuelve la clase de Bootstrap del badge según el % (0..100)
-    string BadgeFor(decimal pct)
-    {
-        if (pct >= 75) return "text-bg-success";   // verde
-        if (pct >= 50) return "text-bg-warning";   // amarillo
-        if (pct > 0) return "text-bg-danger";    // rojo
-        return "text-bg-secondary";                // gris (0 o sin datos)
-    }
-}
 
 <div class="page-head rounded-3 shadow-sm p-3 mb-3 bg-white border">
     <div class="d-flex justify-content-between align-items-center">
@@ -173,13 +150,24 @@
             </div>
         </div>
         <div class="no-print d-flex gap-2">
-            <a asp-action="Index" asp-controller="CMMI" asp-route-empresaId="@Model.id_empresa"
-               class="btn btn-outline-secondary">Volver</a>
+            <a asp-action="Index" asp-controller="CMMI" asp-route-empresaId="@Model.id_empresa" class="btn btn-outline-secondary">Volver</a>
+            <a class="btn btn-outline-primary" href="?pdf=1">Modo PDF</a>
             <button class="btn btn-primary" onclick="window.print()">Imprimir</button>
         </div>
     </div>
 </div>
 
+<!-- Intro -->
+<div class="intro-box mb-4">
+    Esta auditoría se realizó con base en el modelo <strong>CMMI</strong> (Capability Maturity Model Integration),
+    con el objetivo de evaluar el grado de cumplimiento de prácticas y la madurez de los procesos de
+    <strong>@Model.Empresa</strong>. El periodo auditado comprende desde <strong>@Model.fecha_inicio</strong>
+    hasta <strong>@(Model.fecha_cierre?.ToString("dd/MM/yyyy HH:mm") ?? "—")</strong>, y la evaluación fue
+    ejecutada por <strong>@Model.Auditor</strong>. Los resultados incluyen métricas de cumplimiento por categoría,
+    detalle por pregunta y comentarios del auditor cuando corresponda.
+</div>
+
+<!-- KPIs -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
         <div class="metric-card p-3 text-center">
@@ -195,28 +183,20 @@
     </div>
 </div>
 
-
+<!-- Tabla resumen -->
 <div class="table-responsive mb-3">
     <table class="table align-middle">
         <thead class="table-light">
-            <tr>
-                <th style="width:65%">Categoría</th>
-                <th class="text-end">Cumplimiento</th>
-            </tr>
+            <tr><th style="width:65%">Categoría</th><th class="text-end">Cumplimiento</th></tr>
         </thead>
         <tbody>
             @foreach (var c in Model.Categorias)
             {
                 <tr>
-                    <td>
-                        <div class="fw-semibold">@c.Codigo · @c.Nombre</div>
+                    <td><div class="fw-semibold">@c.Codigo · @c.Nombre</div></td>
+                    <td class="text-end">
+                        <span class="badge cat-pct" style="@BadgeStyle(c.Porcentaje)">@($"{c.Porcentaje:0.#}%")</span>
                     </td>
-                 <td class="text-end">
-                    <span class="badge cat-pct" style="@BadgeStyle(c.Porcentaje)">
-                        @($"{c.Porcentaje:0.#}%")
-                    </span>
-
-                 </td>
                 </tr>
             }
         </tbody>
@@ -225,83 +205,147 @@
 
 <h3 class="h6 mb-2">Detalle por categoría</h3>
 
-<div class="d-flex gap-2 mb-2 no-print">
-    <button type="button" class="btn btn-sm btn-outline-secondary" data-acc-toggle="expand">Expandir todo</button>
-    <button type="button" class="btn btn-sm btn-outline-secondary" data-acc-toggle="collapse">Colapsar todo</button>
-</div>
+@if (!ForzarExpandido)
+{
+    <!-- Controles solo en modo interactivo -->
+    <div class="d-flex gap-2 mb-2 no-print">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-acc-toggle="expand">Expandir todo</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-acc-toggle="collapse">Colapsar todo</button>
+    </div>
+}
 
 <div class="accordion" id="accCategorias">
     @for (int i = 0; i < Model.Categorias.Count; i++)
     {
         var cat = Model.Categorias[i];
         var cid = $"cat_{i}";
+
         <div class="accordion-item mb-2 rounded-3 overflow-hidden">
-              <h2 class="accordion-header" id="h_@cid">
-                <button class="accordion-button collapsed pe-5"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#@cid"
-                        aria-expanded="false"
-                        aria-controls="@cid">
-                    <strong>@cat.Codigo</strong> · @cat.Nombre
-                    <span class="badge cat-pct" style="@BadgeStyle(cat.Porcentaje)">
-                        @($"{cat.Porcentaje:0.#}%")
-                    </span>
-                </button>
-              </h2>
+            <h2 class="accordion-header" id="h_@cid">
+                @if (ForzarExpandido)
+                {
+                    <!-- Botón sin comportamiento de collapse y visualmente abierto -->
+                    <button class="accordion-button pe-5"
+                            type="button"
+                            aria-expanded="true"
+                            aria-controls="@cid"
+                            disabled>
+                        <strong>@cat.Codigo</strong> · @cat.Nombre
+                        <span class="badge cat-pct" style="@BadgeStyle(cat.Porcentaje)">@($"{cat.Porcentaje:0.#}%")</span>
+                    </button>
+                }
+                else
+                {
+                    <button class="accordion-button collapsed pe-5"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#@cid"
+                            aria-expanded="false"
+                            aria-controls="@cid">
+                        <strong>@cat.Codigo</strong> · @cat.Nombre
+                        <span class="badge cat-pct" style="@BadgeStyle(cat.Porcentaje)">@($"{cat.Porcentaje:0.#}%")</span>
+                    </button>
+                }
+            </h2>
 
-            <div id="@cid" class="accordion-collapse collapse" aria-labelledby="h_@cid">
-                <div class="accordion-body p-0">
-                    <table class="table table-sm align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width:55%">Pregunta</th>
-                                <th class="text-center" style="width:120px">Resultado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var q in cat.Preguntas)
-                            {
-                              <tr>
-                                <td>
-                                  <span class="q-code">@q.Codigo</span>@q.Texto
-                                </td>
-                                  <td class="text-center">
-                                <span class="badge" style="@BadgeStyle(q.Valor)">
-                                  @($"{q.Valor:0.#}%")
-                                </span>
-                                </td>
-                              </tr>
-                              @if (!string.IsNullOrWhiteSpace(q.Comentario))
-                              {
-                                <tr>
-                                  <td colspan="2">
-                                    <div class="comment-box">
-                                      <div class="small text-muted mb-1">Comentario del auditor</div>
-                                      @q.Comentario
-                                    </div>
-                                  </td>
-                                </tr>
-                              }
-                            }
-                        </tbody>
-
-                    </table>
+            @if (ForzarExpandido)
+            {
+                <div id="@cid" class="accordion-collapse collapse show" aria-labelledby="h_@cid" style="height:auto">
+                    <div class="accordion-body p-0">
+                        @* contenido de la tabla *@
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr><th style="width:55%">Pregunta</th><th class="text-center" style="width:120px">Resultado</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var d in cat.Preguntas)
+                                {
+                                    <tr>
+                                        <td><span class="q-code">@d.Codigo</span>@d.Texto</td>
+                                        <td class="text-center"><span class="badge" style="@BadgeStyle(d.Valor)">@($"{d.Valor:0.#}%")</span></td>
+                                    </tr>
+                                    @if (!string.IsNullOrWhiteSpace(d.Comentario))
+                                    {
+                                        <tr>
+                                            <td colspan="2">
+                                                <div class="comment-box">
+                                                    <div class="small text-muted mb-1">Comentario del auditor</div>
+                                                    @d.Comentario
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            }
+            else
+            {
+                <div id="@cid" class="accordion-collapse collapse" aria-labelledby="h_@cid">
+                    <div class="accordion-body p-0">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr><th style="width:55%">Pregunta</th><th class="text-center" style="width:120px">Resultado</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in cat.Preguntas)
+                                {
+                                    <tr>
+                                        <td><span class="q-code">@p.Codigo</span>@p.Texto</td>
+                                        <td class="text-center"><span class="badge" style="@BadgeStyle(p.Valor)">@($"{p.Valor:0.#}%")</span></td>
+                                    </tr>
+                                    @if (!string.IsNullOrWhiteSpace(p.Comentario))
+                                    {
+                                        <tr>
+                                            <td colspan="2">
+                                                <div class="comment-box">
+                                                    <div class="small text-muted mb-1">Comentario del auditor</div>
+                                                    @p.Comentario
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
         </div>
     }
 </div>
 
+<!-- Pie / Firmas -->
+<div class="report-footer">
+    <div class="signs">
+        <div class="sign">
+            <div class="line">Auditor</div>
+            <div class="small">@Model.Auditor</div>
+        </div>
+        <div class="sign">
+            <div class="line">Representante de @Model.Empresa</div>
+            <div class="small">@Model.RepresentanteEmpresa</div>
+        </div>
+    </div>
+    <div class="note">
+        Este informe se emite en el marco de la auditoría basada en el modelo CMMI.
+        En caso de hallazgos, se sugiere elaborar e implementar un plan de acción correctiva.
+    </div>
+</div>
+
 @section Scripts {
-    <script>
-        document.addEventListener('click', e=>{
-          const btn = e.target.closest('[data-acc-toggle]'); if(!btn) return;
-          const sel = '#accCategorias .accordion-collapse';
-          document.querySelectorAll(sel).forEach(el=>{
-            const c = bootstrap.Collapse.getOrCreateInstance(el, {toggle:false});
-            if (btn.dataset.accToggle === 'expand') c.show(); else c.hide();
-          });
-        });
-    </script>
+    @if (!ForzarExpandido)
+    {
+        <script>
+            document.addEventListener('click', e=>{
+              const btn = e.target.closest('[data-acc-toggle]'); if(!btn) return;
+              document.querySelectorAll('#accCategorias .accordion-collapse').forEach(el=>{
+                const c = bootstrap.Collapse.getOrCreateInstance(el, {toggle:false});
+                if (btn.dataset.accToggle === 'expand') c.show(); else c.hide();
+              });
+            });
+        </script>
+    }
 }

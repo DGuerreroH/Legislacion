@@ -182,6 +182,7 @@ namespace LegislacionAPP.Controllers
                 id_empresa = empresaId,
                 id_evaluacion = evalId,
                 Empresa = eval.Empresa?.nombre ?? "",
+                RepresentanteEmpresa = eval.Empresa?.representante ?? "",
                 Auditor = (eval.id_UsuarioAuditorNavigation?.nombre + " " +
                            eval.id_UsuarioAuditorNavigation?.apellido).Trim(),
                 fecha_inicio = eval.fecha_inicio,
