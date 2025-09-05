@@ -3,8 +3,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copia solo el csproj primero (cachea restore)
-COPY ["LegislacionAPP/LegislacionAPP.csproj", "LegislacionAPP/"]
-RUN dotnet restore "LegislacionAPP/LegislacionAPP.csproj"
+COPY ["LegislacionAPP2025/LegislacionAPP.csproj", "LegislacionAPP/"]
+RUN dotnet restore "LegislacionAPP2025/LegislacionAPP.csproj"
 
 # Copia el resto del código y publica
 COPY . .
