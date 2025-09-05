@@ -1,17 +1,13 @@
-# ========== build ==========
+# ---------- build ----------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-
-# Copia solo el csproj primero (cachea restore)
-COPY ["LegislacionAPP2025/LegislacionAPP.csproj", "LegislacionAPP/"]
-RUN dotnet restore "LegislacionAPP2025/LegislacionAPP.csproj"
-
-# Copia el resto del código y publica
 COPY . .
-WORKDIR /src/LegislacionAPP
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# ========== runtime ==========
+# El .csproj está en la RAÍZ del repo
+RUN dotnet restore ./LegislacionAPP.csproj
+RUN dotnet publish ./LegislacionAPP.csproj -c Release -o /app/publish
+
+# ---------- runtime ----------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080
