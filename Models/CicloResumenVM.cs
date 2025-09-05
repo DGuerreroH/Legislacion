@@ -10,6 +10,7 @@
         public decimal porcentaje_avance { get; set; }
         public string Estado => fecha_cierre == null ? "Abierto" : "Cerrado";
         public bool Certificable => porcentaje_avance == 100;
+        public int nivel_cmmi { get; set; }
 
     }
 

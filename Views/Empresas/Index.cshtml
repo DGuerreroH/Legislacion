@@ -231,7 +231,7 @@ else
                             </a>
 
                             @* Digitalizador *@
-                            @if (User.IsInRole("Digitalizador") || User.IsInRole("Digi"))
+                            @if (User.IsInRole("Digitalizador") || User.IsInRole("Admin"))
                             {
                                 <a asp-controller="Legislacion"
                                    asp-action="Index"
@@ -249,7 +249,7 @@ else
                             }
 
                             @* Gerente / Auditor *@
-                            @if (User.IsInRole("Gerente") || User.IsInRole("Auditor") || User.IsInRole("Audi"))
+                            @if (User.IsInRole("Auditor") || User.IsInRole("Admin"))
                             {
                                 <a asp-controller="Legislacion"
                                    asp-action="Index"
@@ -259,8 +259,8 @@ else
                                         <i class="bi bi-journal-check"></i>
                                     </div>
                                     <div class="overflow-hidden">
-                                        <div class="action-title text-truncate">Legislaciones</div>
-                                        <div class="action-desc text-truncate">Crear y revisar cumplimiento</div>
+                                        <div class="action-title text-truncate">Auditar Legislaciones</div>
+                                        <div class="action-desc text-truncate">Crear y revisar auditorias</div>
                                     </div>
                                     <i class="bi bi-chevron-right ms-auto text-muted"></i>
                                 </a>

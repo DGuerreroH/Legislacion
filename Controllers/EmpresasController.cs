@@ -18,7 +18,7 @@ public class EmpresasController : Controller
     {
         var usuarioId = await GetUsuarioIdActualAsync();
         var empresas = new List<EmpresaCardVM>();
-        if (empresaId == 0 && (User.IsInRole(Roles.Admin) || (User.IsInRole(Roles.Auditor))))
+        if ((User.IsInRole(Roles.Admin) || (User.IsInRole(Roles.Auditor))))
         {
             empresas = await _db.Empresa                
                 .Select(ue => new EmpresaCardVM

@@ -76,7 +76,7 @@
                 </div>
 
                 <div class="card-footer bg-white d-flex justify-content-between">
-                    <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+                    <a asp-action="Index" asp-controller="Empresas" asp-route-empresaId="@Model.id_empresa" class="btn btn-outline-secondary">Volver</a>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-save me-1"></i> Guardar cambios
                     </button>

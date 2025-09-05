@@ -1,7 +1,9 @@
-﻿using LegislacionAPP.Common.Enums;
+﻿using LegislacionAPP.Common;
+using LegislacionAPP.Common.Enums;
 using LegislacionAPP.Data;
 using LegislacionAPP.Models;
 using LegislacionAPP.Models.DBModels;
+using LegislacionAPP.Models.Helpers;
 using LegislacionAPP.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,7 +43,8 @@ public class AuditoriaController : Controller
                 fecha_cierre = c.fecha_cierre,
                 articulos_totales = c.articulos_totales,
                 articulos_aprobados = c.articulos_aprobados,
-                porcentaje_avance = c.porcentaje_aprobado ?? 0m
+                porcentaje_avance = c.porcentaje_aprobado ?? 0m,
+                nivel_cmmi = c.nivel_cmmi
             })
             .ToListAsync();
 
@@ -52,7 +55,7 @@ public class AuditoriaController : Controller
             Titulo = l.titulo,
             Ciclos = ciclos,
             EmpresaID = l.id_empresaNavigation?.id_empresa
-        };
+        };    
 
         return View(vm);
     }
@@ -81,7 +84,8 @@ public class AuditoriaController : Controller
             articulos_aprobados = 0,
             porcentaje_aprobado = 0m,
             id_usuario = (int)TryGetUserId(),
-            id_estado = (int)EstadoCodigo.Activa
+            id_estado = (int)EstadoCodigo.Activa,
+            nivel_cmmi = 0
 
         };
 
@@ -170,23 +174,26 @@ public class AuditoriaController : Controller
                 List<Evidencia> evids = new();
                 if (ev != null && evidenciasPorEval.TryGetValue(ev.id_evaluacion_segmento, out var lista))
                     evids = lista;
-
-                // Mapea a tu VM de segmento
+                
                 return new SegmentoAuditableVM
                 {
                     id_segmento_legislacion = s.id_segmento_legislacion,
-                    id_evaluacion_segmento = ev?.id_evaluacion_segmento,       // null si aún no existe
+                    id_evaluacion_segmento = ev?.id_evaluacion_segmento,
                     contenido = s.contenido,
                     id_estado = ev?.id_estado,
                     observaciones = ev?.comentario,
                     id_tipo_elemento = s.id_tipo_elemento,
                     tipo_elemento = tipoNombre,
                     segmentoTitulo = s.tituloSegmento,
-                    Evidencias = evids    // <<--- aquí van las evidencias precargadas
+                    Evidencias = evids
                 };
             }).ToList()
         };
-
+        (var pct, var avance) = LegislationEngine.Compute(vm.Segmentos);
+        vm.porcentaje_avance = avance;    
+        vm.cmmi_pct = pct;
+        vm.cmmi_nivel = Madurez.Nivel(pct);
+        vm.cmmi_nivel_nombre = Madurez.NombreNivel(vm.cmmi_nivel);
         return View(vm);
     }
 
@@ -222,7 +229,7 @@ public class AuditoriaController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Guardar(AuditoriaContinuarVM vm, string accion, bool randomSave)
     {
-        // accion: "guardar" | "cerrar" pare reconocer cuando cerrar el ciclo
+        // accion: "guardar" | "cerrar" para reconocer cuando cerrar el ciclo
         // 1) Validaciones básicas
         var ciclo = await _context.CicloAuditoria
             .FirstOrDefaultAsync(c => c.id_ciclo_auditoria == vm.id_ciclo_auditoria);
@@ -287,11 +294,12 @@ public class AuditoriaController : Controller
         var revisados = await _context.EvaluacionSegmento
             .Where(e => e.id_ciclo_auditoria == ciclo.id_ciclo_auditoria && e.id_estado != (int)EstadoCodigo.Cumple)
             .CountAsync();
-
         ciclo.articulos_totales = total;
         ciclo.articulos_aprobados = aprobados;
         ciclo.porcentaje_aprobado = total == 0 ? 0 : (int)Math.Round(100.0 * aprobados / total);
         ciclo.fecha_cierre = accion == "cerrar" ? DateTime.UtcNow : null;
+        var nivel = Madurez.Nivel((decimal)ciclo.porcentaje_aprobado);
+        ciclo.nivel_cmmi = nivel;     
 
         await _context.SaveChangesAsync();
 

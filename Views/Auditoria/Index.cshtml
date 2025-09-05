@@ -2,6 +2,35 @@
 @{
     ViewData["Title"] = "Auditorías";
     string Sub = $"{Model.EmpresaNombre} · {Model.Titulo}";
+
+    //Helpers de nivel CMMI
+    int NivelFromPct(decimal pct)
+    {
+        if (pct >= 90) return 5;
+        if (pct >= 80) return 4;
+        if (pct >= 60) return 3;
+        if (pct >= 40) return 2;
+        if (pct > 0) return 1;
+        return 0;
+    }
+    string NombreNivel(int n) => n switch
+    {
+        5 => "Optimizado",
+        4 => "Gestionado cuantitativamente",
+        3 => "Definido",
+        2 => "Gestionado",
+        1 => "Realizado",
+        _ => "Incompleto"
+    };
+    string BadgeNivel(int n) => n switch
+    {
+        5 => "badge bg-success",             // verde fuerte
+        4 => "badge bg-success-subtle text-success-emphasis",
+        3 => "badge bg-primary-subtle text-primary-emphasis",
+        2 => "badge bg-warning text-dark",
+        1 => "badge bg-danger",
+        _ => "badge bg-secondary"
+    };
 }
 
 <!-- Cabecera -->
@@ -82,7 +111,11 @@
                             <th>Inicio</th>
                             <th>Cierre</th>
                             <th style="min-width:220px">Avance</th>
-                            <th class="text-end" style="width:160px">Acciones</th>
+
+                            <!-- NUEVO: columna CMMI (legislación) -->
+                            <th class="text-center" style="width:180px">CMMI</th>
+
+                            <th class="text-end" style="width:200px">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -91,11 +124,13 @@
                             var abierto = c.fecha_cierre == null;
                             var estadoClass = abierto ? "bg-primary" : "bg-success";
                             var estadoText = abierto ? "Abierta" : "Cerrada";
+
+                            var pct = c.porcentaje_avance == 0 ? 0 : c.porcentaje_avance;
+                            var lvl = c.nivel_cmmi == 0 ? NivelFromPct(pct) : NivelFromPct(pct);
+
                             <tr class="@(abierto ? "table-warning-subtle" : "")">
                                 <td class="text-muted">@c.id_ciclo_auditoria</td>
-                                <td>
-                                    <span class="badge @estadoClass">@estadoText</span>
-                                </td>
+                                <td><span class="badge @estadoClass">@estadoText</span></td>
                                 <td>@c.fecha_inicio.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>@(c.fecha_cierre?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
                                 <td>
@@ -108,6 +143,13 @@
                                         <div class="progress-bar bg-success" style="width:@c.porcentaje_avance%"></div>
                                     </div>
                                 </td>
+
+                                <!-- NUEVO: celda CMMI -->
+                                <td class="text-center">
+                                    <div class="text-muted">@NombreNivel(lvl)</div>
+                                    <div class="text-muted">Nivel @lvl</div>
+                                </td>
+
                                 <td class="text-end">
                                     @if (abierto)
                                     {

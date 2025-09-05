@@ -6,7 +6,7 @@
         public int id_legislacion { get; set; }
         public int id_ciclo_auditoria { get; set; }
         public bool randomSave { get; set; } = false;
-        public string? accion { get; set; } 
+        public string? accion { get; set; }
 
 
         // Header
@@ -24,6 +24,12 @@
 
         // Segmentos a evaluar
         public List<SegmentoAuditableVM> Segmentos { get; set; } = new();
-    }    
 
-} 
+        // Nuevos elementos CMMI
+        public decimal cmmi_pct { get; set; }
+        public int cmmi_nivel { get; set; }
+        public string? cmmi_nivel_nombre { get; set; } // Nombre CMMI
+
+    }
+
+}

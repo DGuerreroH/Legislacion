@@ -18,6 +18,7 @@ public class CicloAuditoria
 
     [Column("total_segmentos")] public int articulos_totales { get; set; }
     [Column("total_aprobados")] public int articulos_aprobados { get; set; }
+    [Column("nivel_cmmi")] public int nivel_cmmi { get; set; }
     [Column("porcentaje_aprobado")] public decimal? porcentaje_aprobado { get; set; } // 0..100
     [Column("motivo_cierre"), StringLength(1000)] public string? motivo_cierre { get; set; }
     [Column("resumen"), StringLength(1000)] public string? resumen { get; set; }

@@ -10,6 +10,9 @@
         public int Aprobados { get; set; }
         public decimal Porcentaje { get; set; }  // 0..100
         public bool Abierto => fecha_cierre == null;
+        public decimal? porcentaje_aprobado { get; set; }
+        public int? nivel_cmmi { get; set; }
+
     }
 
 }

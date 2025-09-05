@@ -1,8 +1,63 @@
 ﻿@model LegislacionAPP.Models.ReporteCicloVM
 @{
-    ViewData["Title"] = "Informe de auditoría de cumplimiento";
+    ViewData["Title"] = "Informe de auditoría de cumplimiento";    
+    int NivelFromPct(decimal pct)
+    {
+        if (pct >= 90) return 5;
+        if (pct >= 80) return 4;
+        if (pct >= 60) return 3;
+        if (pct >= 40) return 2;
+        if (pct > 0) return 1;
+        return 0;
+    }
+
+    string NombreNivel(int n) => n switch
+    {
+        5 => "Optimizado",
+        4 => "Gestionado cuantitativamente",
+        3 => "Definido",
+        2 => "Gestionado",
+        1 => "Realizado",
+        _ => "Incompleto"
+    };
+    string TextoPorNivel(int nivel)
+    {
+        switch (nivel)
+        {
+            case 1: // N1 — Inicial / Realizado
+                return "El cumplimiento se realiza de forma principalmente reactiva y dependiente de personas. La documentación y la evidencia están dispersas. Se recomienda identificar y priorizar obligaciones legales, definir controles mínimos, registrar evidencias básicas y asignar responsables para cada requerimiento.";
+
+            case 2: // N2 — Gestionado
+                return "Existen procedimientos y registros básicos para atender los requerimientos de la legislación, aunque su aplicación es variable entre áreas. Se sugiere estandarizar formatos, establecer un calendario de revisiones, formalizar roles y asegurar la conservación uniforme de evidencias.";
+
+            case 3: // N3 — Definido
+                return "La organización cuenta con un marco interno documentado para cumplir la legislación, con procesos normalizados y comunicados. El siguiente paso es incorporar métricas de desempeño, auditorías internas periódicas, gestión sistemática de cambios normativos y programas de capacitación.";
+
+            case 4: // N4 — Gestionado cuantitativamente
+                return "El cumplimiento se controla mediante indicadores, umbrales y seguimiento continuo. Se recomienda fortalecer la trazabilidad de hallazgos, mejorar la oportunidad de las alertas, avanzar en automatización de controles y evaluar la efectividad de las acciones correctivas.";
+
+            case 5: // N5 — Optimizado
+                return "La mejora del cumplimiento es proactiva y basada en análisis de causas, lecciones aprendidas y comparación con mejores prácticas. Conviene sostener ciclos de innovación, anticipar cambios regulatorios, y consolidar mecanismos para incorporar mejoras de manera ágil y medible.";
+
+            default:
+                return "Revise los resultados y la evidencia para determinar el nivel de madurez y definir el plan de mejora correspondiente.";
+        }
+    }
+    // Variables
+    var fi = Model?.CicloAuditoria?.fecha_inicio;
+    var fc = Model?.CicloAuditoria?.fecha_cierre;
+    var empresa = Model?.Empresa?.nombre ?? "";
+    var paisEmpresa = Model?.Empresa?.id_paisNavigation?.nombre ?? Model?.EmpresaPais ?? "";
+    var representante = Model?.Empresa?.representante ?? "";
+    var nif = Model?.Empresa?.nit ?? "";
+    var tituloLey = Model?.Legislacion?.titulo ?? "";
+
+    var auditor = ((Model?.Auditor?.nombre + " " + Model?.Auditor?.apellido)?.Trim()) ?? "";
     var paisAuditor = Model?.Auditor?.id_paisNavigation?.nombre ?? "";
-    var paisEmpresa = Model?.Empresa?.id_paisNavigation?.nombre ?? "";
+
+    var pct = Model?.CicloAuditoria?.porcentaje_aprobado ?? 0m; // 0..100
+    var lvl = NivelFromPct(pct);
+    var nomNivel = NombreNivel(lvl);
 }
 
 <style>
@@ -184,7 +239,7 @@
 
 <div class="report-wrap">
     <div class="d-flex justify-content-between align-items-start my-3">
-        <h1 class="h4 mb-3">Informe de auditoría de cumplimiento a @Model?.Legislacion?.titulo</h1>
+        <h1 class="h4 mb-3">Informe de auditoría de madurez CMMI a la legislación: @Model?.Legislacion?.titulo</h1>
         <a asp-action="Ciclos"
            asp-controller="Legislacion"
            asp-route-legislacionId="@Model?.Legislacion?.id_legislacion"
@@ -209,21 +264,39 @@
             }
         </div>
     </div>
-
-    <div class="fs-5 justify lh-lg mb-4">
-        La auditoría tuvo por objeto evaluar el grado de alineación de la empresa @(Model.Empresa.nombre),
-        con domicilio en @(Model.EmpresaPais) y representada legalmente por @(Model.Empresa.representante),
-        con el número de identificación fiscal @(Model.Empresa.nit), frente a los requerimientos establecidos en @(Model.Legislacion.titulo).
-        El proceso incluyó la revisión de políticas internas, la verificación de controles tecnológicos, el análisis de registros de incidentes y
-        la evaluación de los procedimientos de cooperación con autoridades competentes.
+    
+    <div class="fs-5 justify lh-lg">
+        En el período del <strong>@fi?.ToString("dd/MM/yyyy HH:mm")</strong> al
+        <strong>@(fc?.ToString("dd/MM/yyyy HH:mm") ?? "—")</strong> se realizó la
+        <strong>auditoría de cumplimiento</strong> de la legislación
+        <strong>@tituloLey</strong> perteneciente a la empresa 
+        <strong>@empresa (@paisEmpresa)</strong>, representada legalmente por
+        <strong>@representante</strong> (ITIN <strong>@nif</strong>), respecto de los
+        requisitos establecidos en dicho cuerpo normativo. El trabajo de auditoría fue
+        ejecutado por <strong>@auditor</strong>@(string.IsNullOrWhiteSpace(paisAuditor) ? "" : $" ({paisAuditor})")
+        e incluyó la revisión de políticas y procedimientos, la verificación de controles tecnológicos,
+        el análisis de registros e incidentes relevantes y la evaluación de los mecanismos de coordinación
+        con autoridades competentes, apoyándose en entrevistas, observación directa y muestreo de evidencias documentales.
     </div>
-
+    <div class="fs-5 justify lh-lg mt-3">
+        Como resultado, la legislación alcanzó un <strong>cumplimiento global de @pct.ToString("0.##")%</strong> y
+        de acuerdo con la <strong>escala CMMI </strong>, obtuvo el
+        <strong>Nivel @lvl — “@nomNivel”</strong> @TextoPorNivel(lvl)
+    </div>
     <!-- KPIs -->
     <div class="row g-3 row-cols-1 row-cols-sm-2 mb-4">
         <div class="col">
             <div class="stat-card text-center p-3 border rounded-3 h-100">
-                <div class="display-6 fw-bold">@(Model?.CicloAuditoria?.porcentaje_aprobado ?? 0)%</div>
                 <div class="text-muted small">Cumplimiento global</div>
+                <div class="display-6 fw-bold">@(Model?.CicloAuditoria?.porcentaje_aprobado ?? 0)%</div>                
+            </div>
+        </div>
+        <!-- NUEVO: KPI Nivel CMMI -->
+        <div class="col">
+            <div class="stat-card text-center p-3 border rounded-3 h-100">
+                <div class="text-muted small">Nivel CMMI</div>
+                <div class="display-6 fw-bold">@lvl</div>                
+                <div class="small text-muted">@nomNivel</div>
             </div>
         </div>
         <div class="col">
