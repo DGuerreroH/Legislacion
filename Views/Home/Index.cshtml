@@ -33,6 +33,18 @@
                     </div>
                 </a>
             </div>
+            @if (esAdmin)
+            {
+                <div class="col-md-6 col-lg-3">
+                    <a asp-controller="Usuario" asp-action="Index" class="card card-quick h-100">
+                        <div class="card-body">
+                            <div class="icon bg-primary-subtle text-primary"><i class="bi bi-building"></i></div>
+                            <div class="title">Usuarios</div>
+                            <div class="subtitle">Gestionar usuarios</div>
+                        </div>
+                    </a>
+                </div>
+            }
             <div class="col-md-6 col-lg-3">
                 <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
                     @Html.AntiForgeryToken()

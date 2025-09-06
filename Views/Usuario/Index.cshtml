@@ -1,54 +1,124 @@
-﻿@model LegislacionAPP.Models.UsuariosIndexVM
+﻿@model IEnumerable<LegislacionAPP.Models.UsuariosIndexVM>
 @{
     ViewData["Title"] = "Usuarios";
 }
 
-<h2 class="mb-3">Usuarios</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">@ViewData["Title"]</h4>
+    <a asp-action="Create" class="btn btn-success">
+        <i class="bi bi-person-plus me-1"></i> Nuevo usuario
+    </a>
+</div>
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-md-4">
-        <input type="text" name="q" value="@Model.FiltroTexto" class="form-control" placeholder="Buscar por nombre, correo..." />
+@if (TempData["ok"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @ok
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <div class="col-md-3">
-        <select name="id_estado" class="form-select" asp-items="Model.Estados">
-            <option value="">-- Estado --</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <select name="id_pais" class="form-select" asp-items="Model.Paises">
-            <option value="">-- País --</option>
-        </select>
-    </div>
-    <div class="col-md-2 d-grid">
-        <button class="btn btn-primary">Filtrar</button>
-    </div>
-</form>
+}
 
-<table class="table table-sm align-middle table-hover">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>País</th>
-            <th>Estado</th>
-            <th style="width:140px;"></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var u in Model.Items)
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:28%">Usuario</th>
+            <th style="width:22%">Correo</th>
+            <th style="width:15%">Rol</th>
+            <th style="width:10%">Estado</th>
+            <th style="width:15%">Empresas</th>
+            <th class="text-end" style="width:10%"></th>
+          </tr>
+        </thead>
+        <tbody>
+        @if (Model == null || !Model.Any())
         {
             <tr>
-                <td>@($"{u.nombre} {u.apellido}".Trim())</td>
-                <td>@u.correo</td>
-                <td>@u.id_paisNavigation?.nombre</td>
-                <td>@u.id_estadoNavigation?.nombre</td>
-                <td class="text-end">
-                    <a asp-action="Details" asp-route-id="@u.id_usuario" class="btn btn-outline-secondary btn-sm">Ver</a>
-                    <a asp-action="Edit" asp-route-id="@u.id_usuario" class="btn btn-outline-primary btn-sm">Editar</a>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No hay usuarios registrados.
                 </td>
             </tr>
         }
-    </tbody>
-</table>
+        else
+        {
+            foreach (var u in Model)
+            {
+                <tr>
+                    <td>
+                        <div class="fw-semibold">@u.Nombre @u.Apellido</div>
+                        <div class="text-muted small">ID: @u.id_usuario</div>
+                    </td>
+                    <td>@u.Correo</td>
+                    <td>@u.RolNombre</td>
+                    <td>
+                        @if (u.IdEstado == 2) {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Activa</span>
+                        } else {
+                            <span class="badge bg-secondary">@(u.EstadoNombre ?? "Inactiva")</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrWhiteSpace(u.EmpresasLista))
+                        {
+                            var partes = u.EmpresasLista.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                            if (partes.Length <= 3)
+                            {
+                                foreach (var e in partes)
+                                {
+                                    <span class="badge bg-light text-dark border me-1 mb-1">@e</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark border">@partes[0]</span>
+                                <span class="badge bg-light text-dark border">@partes[1]</span>
+                                <span class="badge bg-light text-dark border">@partes[2]</span>
+                                <span class="badge bg-secondary">+ @(partes.Length - 3)</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <a asp-action="Edit" asp-route-id="@u.id_usuario"
+                           class="btn btn-sm btn-outline-primary me-1" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
 
-<a asp-action="Create" class="btn btn-success">Nuevo usuario</a>
+                        <form asp-action="Delete"
+                              asp-route-id="@u.id_usuario"
+                              method="post"
+                              class="d-inline js-delete-form"
+                              data-msg="¿Está seguro de eliminar al usuario @($"{u.Nombre} {u.Apellido}")?">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  // Confirmación de eliminar
+  document.addEventListener('submit', function (e) {
+    const f = e.target.closest('form.js-delete-form');
+    if (!f) return;
+    const msg = f.dataset.msg || '¿Está seguro que desea eliminar este registro?';
+    if (!window.confirm(msg)) {
+      e.preventDefault();
+    }
+  });
+</script>
+}

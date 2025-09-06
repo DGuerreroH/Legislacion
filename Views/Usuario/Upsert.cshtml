@@ -1,0 +1,135 @@
+﻿@model UsuarioUpsertVM
+@{
+    bool esEdicion = Model.id_usuario.HasValue;
+    ViewData["Title"] = esEdicion ? "Editar usuario" : "Crear usuario";
+}
+
+<h4>@ViewData["Title"]</h4>
+<hr />
+
+<form asp-action="@(esEdicion ? "Edit" : "Create")" method="post">
+    @Html.AntiForgeryToken()
+    @if (esEdicion)
+    {
+        <input type="hidden" asp-for="id_usuario" />
+    }
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="nombre" class="form-label"></label>
+            <input asp-for="nombre" class="form-control" />
+            <span asp-validation-for="nombre" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="apellido" class="form-label"></label>
+            <input asp-for="apellido" class="form-control" />
+            <span asp-validation-for="apellido" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="correo" class="form-label"></label>
+            <input asp-for="correo" class="form-control" />
+            <span asp-validation-for="correo" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="password" class="form-label"></label>
+            <input asp-for="password" class="form-control" type="password" placeholder="(dejar vacío para no cambiar)" />
+            <span asp-validation-for="password" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Rol global</label>
+            <select asp-for="id_rol" asp-items="Model.Roles" class="form-select"></select>
+            <span asp-validation-for="id_rol" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Estado</label>
+            <select asp-for="id_estado" class="form-select">
+                <option value="2">Activo</option>
+                <option value="3">Inactivo</option>
+            </select>
+            <span asp-validation-for="id_estado" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">País</label>
+            <select asp-for="id_pais" asp-items="Model.Paises" class="form-select"></select>
+            <span asp-validation-for="id_pais" class="text-danger"></span>
+        </div>
+    </div>
+
+    <hr />
+    <h5>Asignaciones a empresas</h5>
+
+    <table class="table align-middle" id="tblAsign">
+        <thead>
+            <tr>
+                <th style="width:90%">Empresa</th>
+                <th style="width:10%"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Asignaciones.Count; i++)
+            {
+                <tr>
+                    <td>
+                        <select name="Asignaciones[@i].id_empresa" class="form-select">
+                            <option value="">-- seleccione --</option>
+                            @foreach (var e in Model.Empresas)
+                            {
+                                <option value="@e.Value" selected="@(Model.Asignaciones[i].id_empresa.ToString() == e.Value ? "selected" : null)">@e.Text</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="delRow(this)"><i class="bi bi-x-lg"></i></button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRow()">+ Agregar empresa</button>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function delRow(btn) {
+            const tr = btn.closest('tr');
+            tr.remove();
+            renumerar();
+        }
+        function addRow() {
+            const tbody = document.querySelector('#tblAsign tbody');
+            const idx = tbody.querySelectorAll('tr').length;
+            const empresas = @Html.Raw(Json.Serialize(Model.Empresas.Select(x => new { v = x.Value, t = x.Text })));
+
+            const selEmp = `<select name="Asignaciones[${idx}].id_empresa" class="form-select">
+                              <option value="">-- seleccione --</option>
+                              ${empresas.map(e => `<option value="${e.v}">${e.t}</option>`).join('')}
+                            </select>`;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${selEmp}</td>
+                            <td class="text-end"><button type="button" class="btn btn-outline-danger btn-sm" onclick="delRow(this)"><i class="bi bi-x-lg"></i></button></td>`;
+            tbody.appendChild(tr);
+        }
+        function renumerar() {
+            const rows = document.querySelectorAll('#tblAsign tbody tr');
+            rows.forEach((tr, i) => {
+                const sel = tr.querySelector('select[name*="Asignaciones"]');
+                if (sel) sel.name = `Asignaciones[${i}].id_empresa`;
+            });
+        }
+    </script>
+}
+
+
+
