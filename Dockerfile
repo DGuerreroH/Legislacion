@@ -1,21 +1,28 @@
 # syntax=docker/dockerfile:1
+
+# Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
+# Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY ["LegislacionAPP/LegislacionAPP.csproj", "LegislacionAPP/"]
-RUN dotnet restore "LegislacionAPP/LegislacionAPP.csproj"
+
+# si el csproj está en la raíz del repo/proyecto:
+COPY ["LegislacionAPP.csproj", "."]
+RUN dotnet restore "LegislacionAPP.csproj"
+
+# copia el resto del código
 COPY . .
-WORKDIR /src/LegislacionAPP
 RUN dotnet build "LegislacionAPP.csproj" -c Release -o /app/build
 
+# Publish
 FROM build AS publish
-WORKDIR /src/LegislacionAPP
 RUN dotnet publish "LegislacionAPP.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
+# Final
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
