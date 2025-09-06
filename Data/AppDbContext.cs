@@ -31,18 +31,19 @@ public class AppDbContext : DbContext
 
 
 
-    //protected override void OnModelCreating(ModelBuilder mb)
-    //{
-    //    // Solo lo imprescindible; lo demás ya lo resolviste con DataAnnotations.
-    //    // Ejemplos útiles (opcionales):
-    //    mb.Entity<CicloAuditoria>().Property(p => p.porcentaje_cierre).HasPrecision(5, 2);
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
 
-    //    mb.Entity<SegmentoLegislacion>()
-    //      .HasOne(s => s.id_segmento_padreNavigation)
-    //      .WithMany(p => p.Hijos)
-    //      .HasForeignKey(s => s.id_segmento_padre)
-    //      .OnDelete(DeleteBehavior.Restrict);
+        // Charset/collation por defecto (MySQL 8 + utf8mb4)
+        modelBuilder.HasCharSet("utf8mb4").UseCollation("utf8mb4_general_ci");
+        
+        modelBuilder.Entity<Empresa>()
+            .Property(e => e.nombre).HasMaxLength(200);
 
-    //    base.OnModelCreating(mb);
-    //}
+        modelBuilder.Entity<CMMIRespuesta>()
+            .Property(r => r.valor)    
+            .HasPrecision(5, 2);       
+        
+    }
 }

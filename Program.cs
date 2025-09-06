@@ -7,8 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+var cs = builder.Configuration.GetConnectionString("MySql");
+var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
+builder.Configuration.AddEnvironmentVariables();
+
+builder.Services.AddDbContextPool<AppDbContext>(opts =>
+{
+    opts.UseMySql(cs, serverVersion, my =>
+    {
+        my.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+        //my.CharSetBehavior(CharSetBehavior.NeverAppend);
+    });
+});
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
@@ -26,27 +36,6 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-//// Políticas por rol
-//builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-//    .AddCookie(o =>
-//    {
-//        o.LoginPath = "/Auth/Login";
-//        o.AccessDeniedPath = "/Auth/Denied";
-//        o.SlidingExpiration = true;
-
-//        // Anti-bucle: si ya estás en /Auth/Login, no vuelvas a redirigir
-//        o.Events.OnRedirectToLogin = ctx =>
-//        {
-//            if (ctx.Request.Path.StartsWithSegments("/Auth/Login",
-//                    StringComparison.OrdinalIgnoreCase))
-//            {
-//                // no redirijas otra vez; deja que muestre la vista de login
-//                return Task.CompletedTask;
-//            }
-//            ctx.Response.Redirect(ctx.RedirectUri);
-//            return Task.CompletedTask;
-//        };
-//    });
 
 var app = builder.Build();
 
