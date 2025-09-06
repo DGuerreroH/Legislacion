@@ -41,7 +41,7 @@ public class LegislacionController : Controller
 
         // Lista de legislaciones de esa empresa
         var modelo = await _context.Legislacion
-            .Where(l => l.id_empresa == empresaId)
+            .Where(l => l.id_empresa == empresaId && l.id_estado!= (int)EstadoCodigo.Inactiva)
             .Include(l => l.id_estadoNavigation)
             .Select(l => new LegislacionRowVM
             {
@@ -184,36 +184,16 @@ public class LegislacionController : Controller
         return RedirectToAction("Edit", new { id = entidad.id_legislacion });
     }
 
-
-    public async Task<IActionResult> Delete(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var legislacion = await _context.Legislacion
-            .Include(l => l.id_ambito_aplicacionNavigation)
-            .Include(l => l.id_empresaNavigation)
-            .Include(l => l.id_estadoNavigation)
-            .FirstOrDefaultAsync(m => m.id_legislacion == id);
-        if (legislacion == null)
-        {
-            return NotFound();
-        }
-
-        return View(legislacion);
-    }
-
+      
     // POST: LegislacionTEST/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> DeleteConfirmed(int legislacionId)
     {
-        var legislacion = await _context.Legislacion.FindAsync(id);
+        var legislacion = await _context.Legislacion.FindAsync(legislacionId);
         if (legislacion != null)
         {
-            _context.Legislacion.Remove(legislacion);
+            legislacion.id_estado = (int)EstadoCodigo.Inactiva;
         }
 
         await _context.SaveChangesAsync();

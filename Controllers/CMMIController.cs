@@ -175,12 +175,13 @@ namespace LegislacionAPP.Controllers
         public async Task<IActionResult> Evaluar(int empresaId, int evalId)
         {
             var eval = await _db.CMMIEvaluacion
+                .AsNoTracking()
                 .Include(e => e.Empresa)
                 .Include(e => e.id_UsuarioAuditorNavigation)
                 .FirstOrDefaultAsync(e => e.id_evaluacion == evalId && e.id_empresa == empresaId);
+
             if (eval == null) return NotFound();
 
-            // Trae categorías y preguntas
             var cats = await _db.CCMICategoria
                 .AsNoTracking()
                 .Where(c => c.activo)
@@ -203,11 +204,17 @@ namespace LegislacionAPP.Controllers
                 })
                 .ToListAsync();
 
-
-            // Respuestas previas
             var resp = await _db.CMMIRespuesta
+                .AsNoTracking()
                 .Where(r => r.id_evaluacion == evalId)
-                .ToDictionaryAsync(r => r.id_ccmi_pregunta, r => r);
+                .Select(r => new
+                {
+                    r.id_ccmi_pregunta,
+                    r.valor,
+                    r.observacion,
+                    r.evidencia_url
+                })
+                .ToDictionaryAsync(x => x.id_ccmi_pregunta);
 
             var vm = new CMMIEvaluarVM
             {
@@ -227,8 +234,10 @@ namespace LegislacionAPP.Controllers
                     nombre = c.nombre,
                     orden = c.orden
                 };
+
                 foreach (var p in c.Pregs)
                 {
+                    // Trae respuesta si existe
                     resp.TryGetValue(p.id_cmmi_pregunta, out var r);
                     catVM.Preguntas.Add(new CMMIPreguntaEvalVM
                     {
@@ -237,18 +246,19 @@ namespace LegislacionAPP.Controllers
                         texto = p.texto,
                         peso = p.peso_pregunta,
                         es_critica = p.es_critica,
-                        valor = r?.valor
+                        valor = r?.valor,
+                        comentario = r?.observacion,
                     });
                 }
                 vm.Categorias.Add(catVM);
             }
 
-            // Cálculo preliminar para mostrar resumen si es que hay
+            // Resumen
             (vm.PorcentajeGlobal, vm.NivelGlobal) = Calcular(vm);
 
             return View(vm);
-        }     
-      
+        }
+
         [HttpGet]
         public async Task<IActionResult> Certificado(int empresaId)
         {

@@ -231,7 +231,7 @@ else
                             </a>
 
                             @* Digitalizador *@
-                            @if (User.IsInRole("Digitalizador") || User.IsInRole("Admin"))
+                            @if (User.IsInRole("Digitalizador") || User.IsInRole("Admin") || User.IsInRole("Gerente"))
                             {
                                 <a asp-controller="Legislacion"
                                    asp-action="Index"
