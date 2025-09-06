@@ -11,16 +11,16 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # si el csproj está en la raíz del repo/proyecto:
-COPY ["LegislacionAPP.csproj", "."]
-RUN dotnet restore "LegislacionAPP.csproj"
+COPY ["LegislacionAPP/LegislacionAPP.csproj", "."]
+RUN dotnet restore "LegislacionAPP/LegislacionAPP.csproj"
 
 # copia el resto del código
 COPY . .
-RUN dotnet build "LegislacionAPP.csproj" -c Release -o /app/build
+RUN dotnet build "LegislacionAPP/LegislacionAPP.csproj" -c Release -o /app/build
 
 # Publish
 FROM build AS publish
-RUN dotnet publish "LegislacionAPP.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "LegislacionAPP/LegislacionAPP.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Final
 FROM base AS final
