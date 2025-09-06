@@ -246,6 +246,19 @@ else
                                     </div>
                                     <i class="bi bi-chevron-right ms-auto text-muted"></i>
                                 </a>
+                                <a asp-controller="CMMI"
+                                   asp-action="Index"
+                                   asp-route-empresaId="@e.id_empresa"
+                                   class="action-tile flex-grow-1" aria-label="Evaluaciones CMMI de @e.nombre">
+                                    <div class="action-icon icon-emerald">
+                                        <i class="bi bi-graph-up-arrow"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="action-title text-truncate">Evaluaciones CMMI</div>
+                                        <div class="action-desc text-truncate">Historial, reportes y certificados</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                                </a>
                             }
 
                             @* Gerente / Auditor *@
