@@ -1,12 +1,14 @@
 ﻿using LegislacionAPP.Models.DBModels;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using static LegislacionAPP.Models.DBModels.CMMIPregunta;
 
 namespace LegislacionAPP.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : DbContext, IDataProtectionKeyContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     // DbSets (ajusta a tus clases reales)
     public DbSet<Pais> Pais => Set<Pais>();

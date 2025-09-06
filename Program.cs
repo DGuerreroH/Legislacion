@@ -1,6 +1,7 @@
 using LegislacionAPP.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +37,9 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
+builder.Services.AddDataProtection()
+    .SetApplicationName("legislacion-app")   // nombre estable entre despliegues
+    .PersistKeysToDbContext<AppDbContext>();
 
 var app = builder.Build();
 
