@@ -189,11 +189,34 @@ public class AuditoriaController : Controller
                 };
             }).ToList()
         };
+
+        // 4) Recalcular progreso del ciclo
+        var segmentosUpdated = await _context.EvaluacionSegmento
+         .Where(e => e.id_ciclo_auditoria == ciclo.id_ciclo_auditoria)
+         .Select(s => new { s.id_segmento_legislacion, s.id_estado })
+         .ToListAsync();
+
+        var total = segmentosUpdated.Count;
+        var aprobados = segmentosUpdated.Count(e => e.id_estado == (int)EstadoCodigo.Cumple);
+        var revisados = segmentosUpdated.Count(e =>
+            e.id_estado != (int)EstadoCodigo.Cumple &&
+            e.id_estado != (int)EstadoCodigo.NoCumple &&
+            e.id_estado != (int)EstadoCodigo.Parcial);
+
+        ciclo.articulos_totales = total;
+        ciclo.articulos_aprobados = aprobados;
+        ciclo.porcentaje_aprobado = total == 0 ? 0 : (int)Math.Round(100.0 * aprobados / total);
+        vm.porcentaje_aprobados = ciclo.porcentaje_aprobado;
         (var pct, var avance) = LegislationEngine.Compute(vm.Segmentos);
-        vm.porcentaje_avance = avance;    
-        vm.cmmi_pct = pct;
-        vm.cmmi_nivel = Madurez.Nivel(pct);
-        vm.cmmi_nivel_nombre = Madurez.NombreNivel(vm.cmmi_nivel);
+
+        if (revisados == 0)
+        {
+            vm.cmmi_pct = pct;
+            vm.cmmi_nivel = Madurez.Nivel(pct);
+            vm.cmmi_nivel_nombre = Madurez.NombreNivel(vm.cmmi_nivel);
+            ciclo.nivel_cmmi = vm.cmmi_nivel;
+        }
+        vm.porcentaje_avance = avance;      
         return View(vm);
     }
 
@@ -259,7 +282,7 @@ public class AuditoriaController : Controller
             if (evalsExistentes.TryGetValue(s.id_segmento_legislacion, out var ev))
             {
                 // UPDATE
-                ev.id_estado = (int)s.id_estado == 0 && randomSave == true ? GetRandomInt() : (int)s.id_estado;
+                ev.id_estado = s.id_estado ==4 && randomSave == true ? GetRandomInt() : (int)s.id_estado;
                 ev.comentario = String.IsNullOrEmpty(s.observaciones) && randomSave ? GetRandomString(ev.id_estado) : s.observaciones;
                 ev.fecha_actualizacion = now;
                 ev.id_auditor = (int)TryGetUserId();
@@ -267,7 +290,8 @@ public class AuditoriaController : Controller
             else
             {
                 // INSERT
-                int idestado = (int)s.id_estado == 0 && randomSave == true ? GetRandomInt() : (int)s.id_estado;
+                int idestado = s.id_estado == 0 && randomSave == true ? GetRandomInt() : (int)s.id_estado;
+                idestado = idestado != 0 ? idestado : (int)EstadoCodigo.Borrador;
                 var nuevo = new EvaluacionSegmento
                 {
                     id_ciclo_auditoria = ciclo.id_ciclo_auditoria,
@@ -283,31 +307,44 @@ public class AuditoriaController : Controller
 
         await _context.SaveChangesAsync();
 
-        // 4) Recalcular progreso del ciclo
-        var total = await _context.SegmentoLegislacion
-            .CountAsync(x => x.id_legislacion == ciclo.id_legislacion);
+                // 4) Recalcular progreso del ciclo
+        var segmentosUpdated = await _context.EvaluacionSegmento
+            .Where(e => e.id_ciclo_auditoria == ciclo.id_ciclo_auditoria)
+            .Select(s => new { s.id_segmento_legislacion, s.id_estado })
+            .ToListAsync();
 
-        var aprobados = await _context.EvaluacionSegmento
-            .Where(e => e.id_ciclo_auditoria == ciclo.id_ciclo_auditoria && e.id_estado == (int)EstadoCodigo.Cumple)
-            .CountAsync();
+        var total = segmentosUpdated.Count;
+        var aprobados = segmentosUpdated.Count(e => e.id_estado == (int)EstadoCodigo.Cumple);
+        var revisados = segmentosUpdated.Count(e =>
+            e.id_estado != (int)EstadoCodigo.Cumple &&
+            e.id_estado != (int)EstadoCodigo.NoCumple &&
+            e.id_estado != (int)EstadoCodigo.Parcial);
 
-        var revisados = await _context.EvaluacionSegmento
-            .Where(e => e.id_ciclo_auditoria == ciclo.id_ciclo_auditoria && e.id_estado != (int)EstadoCodigo.Cumple)
-            .CountAsync();
         ciclo.articulos_totales = total;
         ciclo.articulos_aprobados = aprobados;
         ciclo.porcentaje_aprobado = total == 0 ? 0 : (int)Math.Round(100.0 * aprobados / total);
         ciclo.fecha_cierre = accion == "cerrar" ? DateTime.UtcNow : null;
-        var nivel = Madurez.Nivel((decimal)ciclo.porcentaje_aprobado);
-        ciclo.nivel_cmmi = nivel;     
 
+        List<int> ids= segmentosUpdated.Select(e => e.id_estado).ToList(); 
+        (var pct, var avance) = LegislationEngine.ComputeListID(ids);
+
+        if (revisados == 0)
+        {
+            vm.cmmi_pct = pct;
+            vm.cmmi_nivel = Madurez.Nivel(pct);
+            vm.cmmi_nivel_nombre = Madurez.NombreNivel(vm.cmmi_nivel);
+            ciclo.nivel_cmmi = vm.cmmi_nivel;
+        }
+        vm.porcentaje_avance = avance;
+
+        _context.CicloAuditoria.Update(ciclo);
         await _context.SaveChangesAsync();
 
         TempData["Ok"] = (accion == "cerrar")
             ? "Auditoría cerrada."
             : "Cambios guardados.";
         return RedirectToAction(nameof(Index), new { id = ciclo.id_legislacion });
-
+       
     }
 
     // POST: /Auditoria/SubirEvidencia
@@ -395,6 +432,8 @@ public class AuditoriaController : Controller
     }
     public string GetRandomString(int estado)
     {
+        if (estado == (int)EstadoCodigo.Borrador)
+            return "";
         var obs = ObtenerObservaciones(estado);
         Random random = new Random();
         return obs[random.Next(9)];

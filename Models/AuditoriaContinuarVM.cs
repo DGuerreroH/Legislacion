@@ -20,6 +20,8 @@
         public int articulos_totales { get; set; }
         public int articulos_aprobados { get; set; }
         public decimal porcentaje_avance { get; set; } // 0..100
+        public decimal? porcentaje_aprobados { get; set; } // 0..100
+
         public bool CicloAbierto => fecha_cierre == null;
 
         // Segmentos a evaluar

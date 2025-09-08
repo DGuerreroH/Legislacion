@@ -1,13 +1,15 @@
 ﻿@model LegislacionAPP.Models.EmpresaFormVM
 @{
-    ViewData["Title"] = Model.IsNew ? "Crear empresa" : "Editar empresa";
+    ViewData["Title"] = Model.IsNew ? "Crear empresa" : "Editar empresa " + @Model.nombre;
+    ViewData["BotonTitle"] = Model.IsNew ? "Guardar" : "Editar";
+
     var logoUrl = string.IsNullOrWhiteSpace(Model.logo)
         ? Url.Content("~/img/placeholder-logo.svg")
         : Model.logo;
 }
 
 <div class="container my-3">
-    <h3 class="mb-3">Empresa</h3>
+    <h3 class="mb-3">@ViewData["Title"]</h3>
 
     <form asp-action="Edit" method="post" enctype="multipart/form-data" class="row g-4">
         @Html.AntiForgeryToken()
@@ -35,17 +37,17 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label asp-for="nombre" class="form-label"></label>
+                            <label asp-for="nombre" class="form-label">Nombre</label>
                             <input asp-for="nombre" class="form-control" />
                             <span asp-validation-for="nombre" class="text-danger"></span>
                         </div>
                         <div class="col-12">
-                            <label asp-for="representante" class="form-label"></label>
+                            <label asp-for="representante" class="form-label">Representante Legal</label>
                             <input asp-for="representante" class="form-control" />
                             <span asp-validation-for="representante" class="text-danger"></span>
                         </div>
                         <div class="col-12">
-                            <label asp-for="nit" class="form-label"></label>
+                            <label asp-for="nit" class="form-label">NIT</label>
                             <input asp-for="nit" class="form-control" />
                             <span asp-validation-for="nit" class="text-danger"></span>
                         </div>
@@ -68,7 +70,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label asp-for="fecha_creacion" class="form-label"></label>
+                            <label asp-for="fecha_creacion" class="form-label">Fecha de creación</label>
                             <input asp-for="fecha_creacion" class="form-control" readonly />
                             <span asp-validation-for="fecha_creacion" class="text-danger"></span>
                         </div>
@@ -78,7 +80,7 @@
                 <div class="card-footer bg-white d-flex justify-content-between">
                     <a asp-action="Index" asp-controller="Empresas" asp-route-empresaId="@Model.id_empresa" class="btn btn-outline-secondary">Volver</a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save me-1"></i> Guardar cambios
+                        <i class="bi bi-save me-1"></i> @ViewData["BotonTitle"]
                     </button>
                 </div>
             </div>

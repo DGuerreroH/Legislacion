@@ -110,7 +110,7 @@
                             <th>Estado</th>
                             <th>Inicio</th>
                             <th>Cierre</th>
-                            <th style="min-width:220px">Avance</th>
+                            <th style="min-width:220px">Avance de aprobados</th>
 
                             <!-- NUEVO: columna CMMI (legislación) -->
                             <th class="text-center" style="width:180px">CMMI</th>
@@ -126,7 +126,7 @@
                             var estadoText = abierto ? "Abierta" : "Cerrada";
 
                             var pct = c.porcentaje_avance == 0 ? 0 : c.porcentaje_avance;
-                            var lvl = c.nivel_cmmi == 0 ? NivelFromPct(pct) : NivelFromPct(pct);
+                            var lvl = c.nivel_cmmi;
 
                             <tr class="@(abierto ? "table-warning-subtle" : "")">
                                 <td class="text-muted">@c.id_ciclo_auditoria</td>

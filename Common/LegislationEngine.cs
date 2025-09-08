@@ -32,5 +32,22 @@ namespace LegislacionAPP.Common
             var avance = total == 0 ? 0m : Math.Round((eval * 100m) / total, 2);
             return (pct, avance);
         }
+        public static (decimal pct, decimal avance) ComputeListID(List<int> estados)
+        {
+            var eval = 0; var total = 0; decimal sum = 0m;
+            if(estados == null) estados = new List<int>();
+            foreach (var estadoId in estados)
+            {
+                total++;
+                var v = Score01(estadoId);
+                if (v < 0) continue;    // pendiente
+                eval++;
+                sum += v;
+            }
+
+            var pct = eval == 0 ? 0m : Math.Round((sum / eval) * 100m, 2);
+            var avance = total == 0 ? 0m : Math.Round((eval * 100m) / total, 2);
+            return (pct, avance);
+        }     
     }
 }

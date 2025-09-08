@@ -188,10 +188,7 @@ namespace LegislacionAPP.Controllers
             vm.Empresas = empresas; vm.Roles = roles; vm.Paises = paises;
 
             var user = await _context.Usuario.FirstOrDefaultAsync(u => u.id_usuario == vm.id_usuario);
-            if (user == null) return NotFound();
-
-            if (!ModelState.IsValid)
-                return View("Upsert", vm);
+            if (user == null) return NotFound();                      
 
             try
             {
@@ -269,12 +266,8 @@ namespace LegislacionAPP.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
-
-        private bool UsuarioExists(int id)
-        {
-            return _context.Usuario.Any(e => e.id_usuario == id);
-        }
-        // Util: catálogos
+     
+        // Catalogos
         private async Task<(IEnumerable<SelectListItem> Empresas, IEnumerable<SelectListItem> Roles, IEnumerable<SelectListItem> Paises)> GetCatalogos()
         {
             var empresas = await _context.Empresa

@@ -129,23 +129,20 @@ namespace LegislacionAPP.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int? empresaId)
         {
-            if (empresaId == null) return NotFound();
-
             var e = await _context.Empresa.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.id_empresa == empresaId);
-            if (e == null) return NotFound();
-
+            
             var vm = new EmpresaFormVM
             {
-                id_empresa = e.id_empresa,
-                nombre = e.nombre,
-                logo = e.logo,
-                id_pais = e.id_pais,
-                id_sector = e.id_sector,
-                id_estado = e.id_estado,
-                fecha_creacion = e.fecha_creacion,
-                nit = e.nit,
-                representante = e.representante,
+                id_empresa = e?.id_empresa ?? 0,
+                nombre = e?.nombre ?? "",
+                logo = e?.logo ?? "",
+                id_pais = e?.id_pais ?? 0,
+                id_sector = e?.id_sector ?? 0,
+                id_estado = (int)EstadoCodigo.Activa,
+                fecha_creacion = e?.fecha_creacion ?? DateTime.MinValue,
+                nit = e?.nit ?? "",
+                representante = e?.representante ?? "",
 
             };
             await FillSelects(vm);
@@ -160,7 +157,7 @@ namespace LegislacionAPP.Controllers
         {            
             if (String.IsNullOrEmpty(vm.nombre))
             {
-                FillSelects(vm);
+                await FillSelects(vm);
                 return View(vm);
             }
 

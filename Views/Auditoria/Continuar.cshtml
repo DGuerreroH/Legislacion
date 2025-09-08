@@ -44,7 +44,7 @@
             </span>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-3">        
         <div class="stat-card">
             <div class="text-muted small">Nivel - CMMI</div>
             <div class="fw-semibold">
@@ -57,23 +57,34 @@
 
     <div class="col-6 col-md-3">
         <div class="stat-card">
-            <div class="text-muted small">Cumplimiento actual</div>
+            <div class="text-muted small">Porcentaje CMMI</div>
             <div class="fw-semibold"><span data-pct-text>@Model.cmmi_pct.ToString("0.##")</span>%</div>
         </div>
-    </div> 
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="text-muted small">Porcentaje de calificación</div>
+            <div class="fw-semibold"><span data-pct-text>@Model.porcentaje_avance.ToString("0.##")</span>%</div>
+        </div>
+    </div>
+    @{
+        var mensaje = Model.cmmi_nivel == 0 ? "El nivel CMMI será visible una vez se cumpla el 100% del porcentaje de calificación" : "";
+
+    }
+    <label class="form-label">@mensaje</label>
 
     <div class="col-12">
         <div class="stat-card">
             <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>Avance</span>
-                <span>@Model.articulos_aprobados/@Model.articulos_totales (@Model.porcentaje_avance %)</span>
+                <span>Avance de aprobados</span>
+                <span>@Model.articulos_aprobados/@Model.articulos_totales (@Model.porcentaje_aprobados %)</span>
             </div>
             <div class="progress progress-thin" role="progressbar"
-                 aria-valuenow="@Model.porcentaje_avance" aria-valuemin="0" aria-valuemax="100">
-                <div class="progress-bar bg-success" style="width:@Model.porcentaje_avance%"></div>
+                 aria-valuenow="@Model.porcentaje_aprobados" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-success" style="width:@Model.porcentaje_aprobados%"></div>
             </div>
         </div>
-    </div>
+    </div> 
 </div>
 
 <form asp-action="Guardar" asp-controller="Auditoria" method="post">
